@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Market Indicators
 
-## Getting Started
+미국·한국 증시의 밸류에이션·심리 지표 5종을 한눈에 보여주는 한국어 대시보드입니다.
 
-First, run the development server:
+- **버핏 지수** — 미국 시가총액 / GDP
+- **Shiller CAPE** — S&P 500 경기조정 PER
+- **VIX** — S&P 500 변동성 지수
+- **CNN Fear & Greed** — 미국 시장 심리 지수
+- **VKOSPI** — 코스피 변동성 지수
+
+각 지표는 고정 임계값 밴드로 구간(과열/중립/공포 등)을 분류해 색상과 함께 표시하며, Gemini 기반 AI 분석 리포트 기능을 제공합니다.
+
+## 기술 스택
+
+- Next.js (App Router) + React, TypeScript
+- DB·상태관리 없음 — 외부 공개 API에서 직접 수집, ISR 1시간 캐시
+- 차트·게이지는 외부 라이브러리 없이 직접 그린 SVG
+- Vercel 배포 (main 푸시 시 자동)
+
+## 실행
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm dev        # 개발 서버 (http://localhost:3000)
+pnpm build      # 프로덕션 빌드
+pnpm test       # 테스트
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 환경변수 (`.env.local`)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| 변수 | 용도 |
+|------|------|
+| `KRX_API_KEY` | VKOSPI 수집 (KRX 공공데이터 API) |
+| `GEMINI_API_KEY` | AI 분석 리포트 |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+둘 다 없어도 페이지는 동작하며, 해당 기능만 에러로 표시됩니다.
