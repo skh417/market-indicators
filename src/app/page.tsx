@@ -2,6 +2,7 @@ import { getAllIndicators } from '@/lib/indicators'
 import { SITE } from '@/constants/labels'
 import BuffettHero from '@/components/BuffettHero'
 import IndicatorCard from '@/components/IndicatorCard'
+import ReportSection from '@/components/ReportSection'
 import styles from './page.module.css'
 
 // ISR: 정적 프리렌더 후 1시간마다 백그라운드 재검증
@@ -29,6 +30,8 @@ export default async function Home() {
           <IndicatorCard key={ind.key} indicator={ind} />
         ))}
       </div>
+
+      <ReportSection />
 
       <footer className={styles.foot}>
         데이터는 공개 소스(FRED · multpl · Cboe/Yahoo · CNN · KRX)에서 수집되며 최대 1시간 캐시됩니다.
