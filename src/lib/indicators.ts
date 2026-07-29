@@ -187,7 +187,7 @@ type YahooChart = {
 async function getVix(): Promise<Indicator> {
   try {
     const text = await httpText(
-      'https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?range=1y&interval=1d',
+      'https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?range=5y&interval=1d',
       { ua: BROWSER_UA, revalidate: HOUR },
     )
     const json = JSON.parse(text) as YahooChart
@@ -239,7 +239,9 @@ type CnnFG = {
 
 async function getFearGreed(): Promise<Indicator> {
   try {
-    const text = await httpText('https://production.dataviz.cnn.io/index/fearandgreed/graphdata', {
+    // 시작일 경로를 붙이면 해당 시점부터의 히스토리를 반환 (기본은 ~1년)
+    const start = new Date(Date.now() - 5 * 365 * 864e5).toISOString().slice(0, 10)
+    const text = await httpText(`https://production.dataviz.cnn.io/index/fearandgreed/graphdata/${start}`, {
       ua: BROWSER_UA,
       accept: 'application/json',
       referer: 'https://www.cnn.com/',
