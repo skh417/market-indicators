@@ -15,6 +15,7 @@ const TICK_MS = 16 // ≈190자/초
 export default function ReportSection() {
   const [state, setState] = useState<State>({ phase: 'idle' })
   const [visible, setVisible] = useState(0) // 타자기 효과: 표시할 누적 글자 수
+  const [copied, setCopied] = useState(false)
 
   const total =
     state.phase === 'done' ? state.sections.reduce((n, s) => n + s.title.length + s.body.length, 0) : 0
@@ -28,6 +29,7 @@ export default function ReportSection() {
   const generate = async () => {
     setState({ phase: 'loading' })
     setVisible(0)
+    setCopied(false)
     try {
       const res = await fetch('/api/report', { method: 'POST' })
       const json = await res.json()
@@ -36,6 +38,14 @@ export default function ReportSection() {
     } catch (e) {
       setState({ phase: 'error', message: e instanceof Error ? e.message : String(e) })
     }
+  }
+
+  const copy = async () => {
+    if (state.phase !== 'done') return
+    const text = state.sections.map((s) => `${s.title}\n${s.body}`).join('\n\n')
+    await navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
   }
 
   // 섹션별 표시 구간 계산: 제목이 먼저, 이어서 본문이 점진 표시
@@ -61,23 +71,43 @@ export default function ReportSection() {
           AI 분석 보고서
           <span style={{ fontWeight: 'var(--fw-medium)', color: 'var(--muted)', fontSize: 'var(--fs-card-title-en)' }}> · AI Analysis</span>
         </h3>
-        <button
-          onClick={generate}
-          disabled={state.phase === 'loading' || animating}
-          style={{
-            font: 'inherit',
-            cursor: state.phase === 'loading' || animating ? 'wait' : 'pointer',
-            padding: '6px 16px',
-            borderRadius: 'var(--radius-pill)',
-            fontSize: 'var(--fs-badge)',
-            fontWeight: 'var(--fw-semibold)',
-            color: state.phase === 'loading' || animating ? 'var(--faint)' : 'var(--accent)',
-            border: 'var(--border-width) solid currentColor',
-            background: 'color-mix(in srgb, currentColor var(--badge-tint), transparent)',
-          }}
-        >
-          {state.phase === 'loading' ? '분석 중…' : state.phase === 'done' ? '다시 생성' : '보고서 생성'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {state.phase === 'done' && !animating && (
+            <button
+              onClick={copy}
+              style={{
+                font: 'inherit',
+                cursor: 'pointer',
+                padding: '6px 16px',
+                borderRadius: 'var(--radius-pill)',
+                fontSize: 'var(--fs-badge)',
+                fontWeight: 'var(--fw-semibold)',
+                color: copied ? 'var(--accent)' : 'var(--muted)',
+                border: 'var(--border-width) solid currentColor',
+                background: 'color-mix(in srgb, currentColor var(--badge-tint), transparent)',
+              }}
+            >
+              {copied ? '복사됨 ✓' : '복사'}
+            </button>
+          )}
+          <button
+            onClick={generate}
+            disabled={state.phase === 'loading' || animating}
+            style={{
+              font: 'inherit',
+              cursor: state.phase === 'loading' || animating ? 'wait' : 'pointer',
+              padding: '6px 16px',
+              borderRadius: 'var(--radius-pill)',
+              fontSize: 'var(--fs-badge)',
+              fontWeight: 'var(--fw-semibold)',
+              color: state.phase === 'loading' || animating ? 'var(--faint)' : 'var(--accent)',
+              border: 'var(--border-width) solid currentColor',
+              background: 'color-mix(in srgb, currentColor var(--badge-tint), transparent)',
+            }}
+          >
+            {state.phase === 'loading' ? '분석 중…' : state.phase === 'done' ? '다시 생성' : '보고서 생성'}
+          </button>
+        </div>
       </header>
 
       {state.phase === 'idle' && (
