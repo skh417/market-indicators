@@ -38,6 +38,14 @@ const BANDS: Record<IndicatorKey, Band[]> = {
     { max: 40, zone: { ko: '공포', en: 'High fear', color: C.orange } },
     { max: Infinity, zone: { ko: '극심한 공포', en: 'Extreme fear', color: C.red } },
   ],
+  // VKOSPI (코스피200 변동성지수). ponytail: VIX 밴드를 한국 시장 스케일로 낮춘 휴리스틱 — 필요시 조정.
+  vkospi: [
+    { max: 13, zone: { ko: '매우 안정', en: 'Very calm', color: C.green } },
+    { max: 18, zone: { ko: '안정', en: 'Calm', color: C.teal } },
+    { max: 25, zone: { ko: '경계', en: 'Elevated', color: C.yellow } },
+    { max: 35, zone: { ko: '공포', en: 'High fear', color: C.orange } },
+    { max: Infinity, zone: { ko: '극심한 공포', en: 'Extreme fear', color: C.red } },
+  ],
   // CNN 공포·탐욕 지수. 색상은 CNN 시각 관례(공포=적/주황, 탐욕=녹)를 따름 — 매수/매도 신호 아님.
   feargreed: [
     { max: 25, zone: { ko: '극심한 공포', en: 'Extreme Fear', color: C.red } },

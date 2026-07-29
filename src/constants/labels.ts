@@ -38,6 +38,15 @@ export const LABELS: Record<IndicatorKey, Label> = {
     decimals: 2,
     source: 'Cboe · Yahoo Finance',
   },
+  vkospi: {
+    ko: '코스피 변동성지수',
+    en: 'VKOSPI',
+    blurbKo: '코스피200 옵션 기반 30일 기대 변동성. 높을수록 국내 증시 불안이 큽니다.',
+    blurbEn: '30-day expected KOSPI 200 volatility. Higher means more fear in Korean equities.',
+    unit: '',
+    decimals: 2,
+    source: 'KRX Open API',
+  },
   feargreed: {
     ko: '공포·탐욕 지수',
     en: 'CNN Fear & Greed',
@@ -52,6 +61,6 @@ export const LABELS: Record<IndicatorKey, Label> = {
 export const SITE = {
   titleKo: '시장 밸류에이션 대시보드',
   titleEn: 'Market Valuation Dashboard',
-  descKo: '버핏 지수·CAPE·VIX·공포탐욕지수로 보는 미국 증시 밸류에이션과 심리',
-  descEn: 'US market valuation & sentiment: Buffett Indicator, Shiller CAPE, VIX, and CNN Fear & Greed.',
+  descKo: '버핏 지수·CAPE·VIX·공포탐욕지수·VKOSPI로 보는 증시 밸류에이션과 심리',
+  descEn: 'Market valuation & sentiment: Buffett Indicator, Shiller CAPE, VIX, CNN Fear & Greed, and VKOSPI.',
 }

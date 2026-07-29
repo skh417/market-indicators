@@ -1,48 +1,48 @@
 .main {
-  max-width: 1120px;
+  max-width: var(--layout-max);
   margin: 0 auto;
-  padding: 40px 20px 64px;
+  padding: var(--layout-pad-top) var(--layout-pad-x) var(--layout-pad-bottom);
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--stack-page);
 }
 
 .top {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-8);
   padding: 8px 4px 0;
 }
 
 .h1 {
-  font-size: clamp(1.6rem, 4vw, 2.3rem);
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-size: var(--fs-h1);
+  font-weight: var(--fw-extrabold);
+  letter-spacing: var(--ls-h1);
 }
 
 .h1en {
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   color: var(--muted);
-  font-size: 0.55em;
+  font-size: var(--fs-h1-en);
 }
 
 .sub {
   color: var(--muted);
-  font-size: 0.95rem;
-  max-width: 60ch;
+  font-size: var(--fs-sub);
+  max-width: var(--measure-sub);
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 18px;
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--grid-gap);
 }
 
 .foot {
   margin-top: 12px;
   padding-top: 16px;
-  border-top: 1px solid var(--border);
+  border-top: var(--border-width) solid var(--border);
   color: var(--faint);
-  font-size: 0.78rem;
-  line-height: 1.6;
+  font-size: var(--fs-foot);
+  line-height: var(--lh-foot);
 }

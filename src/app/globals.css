@@ -1,5 +1,7 @@
 :root {
   color-scheme: dark;
+
+  /* base surfaces */
   --bg: #070b14;
   --bg-2: #0b1120;
   --fg: #e8eef7;
@@ -9,6 +11,105 @@
   --card-2: #131c30;
   --border: #1e293b;
   --accent: #38bdf8;
+
+  /* zone scale — src/constants/zones.ts와 동일 */
+  --zone-green: #22c55e;
+  --zone-teal: #2dd4bf;
+  --zone-blue: #38bdf8;
+  --zone-yellow: #eab308;
+  --zone-orange: #f97316;
+  --zone-red: #ef4444;
+
+  /* chart chrome */
+  --chart-grid: #1e293b;
+  --chart-axis: #64748b;
+  --chart-ref: #334155;
+  --chart-tooltip-bg: #0f172a;
+  --chart-tooltip-border: #334155;
+  --chart-tooltip-fg: #e2e8f0;
+  --chart-empty: #475569;
+  --value-neutral: #e2e8f0;
+  --badge-na: #94a3b8;
+
+  /* surfaces */
+  --surface-card: var(--card);
+  --surface-hero: linear-gradient(160deg, var(--card) 0%, var(--card-2) 100%);
+  --surface-page-glow: radial-gradient(1200px 600px at 80% -10%, rgba(56, 189, 248, 0.08), transparent 60%);
+  --gauge-track: linear-gradient(90deg, #22c55e 0%, #38bdf8 25%, #eab308 50%, #f97316 72%, #ef4444 100%);
+  --badge-tint: 14%;
+
+  /* typography */
+  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-extrabold: 800;
+  --fs-h1: clamp(1.6rem, 4vw, 2.3rem);
+  --fs-h1-en: 0.55em;
+  --fs-hero-value: clamp(3rem, 8vw, 4.75rem);
+  --fs-card-value: 2.4rem;
+  --fs-eyebrow: 1.1rem;
+  --fs-eyebrow-en: 0.9rem;
+  --fs-card-title: 1.05rem;
+  --fs-card-title-en: 0.85rem;
+  --fs-sub: 0.95rem;
+  --fs-blurb-hero: 0.92rem;
+  --fs-blurb-hero-en: 0.84rem;
+  --fs-blurb: 0.86rem;
+  --fs-blurb-en: 0.8rem;
+  --fs-badge: 0.78rem;
+  --fs-asof: 0.8rem;
+  --fs-source: 0.74rem;
+  --fs-scale: 0.72rem;
+  --fs-foot: 0.78rem;
+  --fs-chart-tick: 11px;
+  --fs-chart-tooltip: 13px;
+  --lh-base: 1.5;
+  --lh-title: 1.35;
+  --lh-blurb: 1.5;
+  --lh-blurb-hero: 1.55;
+  --lh-badge: 1.4;
+  --lh-foot: 1.6;
+  --lh-value: 1;
+  --ls-h1: -0.02em;
+  --ls-hero-value: -0.03em;
+  --ls-card-value: -0.02em;
+  --numeric-metric: tabular-nums;
+
+  /* spacing */
+  --space-2: 2px;
+  --space-3: 3px;
+  --space-4: 4px;
+  --space-6: 6px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --layout-max: 1120px;
+  --layout-pad-x: 20px;
+  --layout-pad-top: 40px;
+  --layout-pad-bottom: 64px;
+  --stack-page: 24px;
+  --stack-card: 14px;
+  --grid-gap: 18px;
+  --hero-gap: 28px;
+  --card-pad: 20px;
+  --hero-pad: 28px;
+  --hero-pad-mobile: 20px;
+  --hero-left-min: 280px;
+  --measure-sub: 60ch;
+  --measure-blurb: 42ch;
+  --badge-pad: 4px 12px;
+  --gauge-track-h: 10px;
+  --gauge-marker-w: 4px;
+  --gauge-marker-h: 18px;
+
+  /* radius */
+  --radius-hero: 20px;
+  --radius-card: 16px;
+  --radius-tooltip: 8px;
+  --radius-marker: 2px;
+  --radius-pill: 999px;
+  --ring-marker: 0 0 0 2px var(--card-2);
+  --border-width: 1px;
 }
 
 * {
@@ -30,16 +131,38 @@ body {
 body {
   min-height: 100%;
   color: var(--fg);
-  background:
-    radial-gradient(1200px 600px at 80% -10%, rgba(56, 189, 248, 0.08), transparent 60%),
-    var(--bg);
-  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--surface-page-glow), var(--bg);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  line-height: 1.5;
+  line-height: var(--lh-base);
 }
 
 a {
   color: inherit;
   text-decoration: none;
+}
+
+a:hover {
+  color: var(--accent);
+}
+
+/* hero·row 카드 공통 그리드 — 컴포넌트는 inline style이라 미디어쿼리를 여기서 처리 */
+.rowGrid {
+  display: grid;
+  grid-template-columns: minmax(var(--hero-left-min), 5fr) minmax(0, 7fr);
+  gap: var(--hero-gap);
+}
+
+.heroPad {
+  padding: var(--hero-pad);
+}
+
+@media (max-width: 720px) {
+  .rowGrid {
+    grid-template-columns: 1fr;
+  }
+  .heroPad {
+    padding: var(--hero-pad-mobile);
+  }
 }

@@ -1,5 +1,6 @@
 import type { Indicator, IndicatorKey, Point } from './types'
 import { classify } from '../constants/zones'
+import seed from '../data/vkospi-seed'
 
 const BROWSER_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
@@ -17,13 +18,14 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return Promise.race([p.finally(() => clearTimeout(timer)), timeout])
 }
 
-type FetchOpts = { ua?: string; accept?: string; referer?: string; revalidate: number }
+type FetchOpts = { ua?: string; accept?: string; referer?: string; authKey?: string; revalidate: number }
 
 async function httpText(url: string, opts: FetchOpts): Promise<string> {
   const headers: Record<string, string> = {}
   if (opts.ua) headers['User-Agent'] = opts.ua
   if (opts.accept) headers['Accept'] = opts.accept
   if (opts.referer) headers['Referer'] = opts.referer
+  if (opts.authKey) headers['AUTH_KEY'] = opts.authKey
   const res = await withTimeout(
     fetch(url, { headers, next: { revalidate: opts.revalidate } }),
     12_000,
@@ -266,9 +268,61 @@ async function getFearGreed(): Promise<Indicator> {
   }
 }
 
-// 4개 지표를 병렬로 수집. 개별 실패는 errItem으로 격리되어 페이지 전체를 죽이지 않는다.
+// ── VKOSPI (KRX Open API) ──────────────────────────────────────────────
+// data-dbg.krx.co.kr는 일자별(basDd) 단건 조회만 지원한다. 과거분은
+// scripts/backfill-vkospi.mjs가 만든 시드(src/data/vkospi-seed.ts)에서 읽고,
+// 최근 10일치만 API로 받아 병합한다.
+// ponytail: 시드 종료 후 10일 넘게 지난 구간은 공백 — 백필 재실행으로 해결.
+type KrxDrvRow = { BAS_DD?: string; IDX_NM?: string; CLSPRC_IDX?: string }
+
+async function getVkospi(): Promise<Indicator> {
+  try {
+    const key = process.env.KRX_API_KEY
+    if (!key) throw new Error('vkospi: KRX_API_KEY 미설정')
+
+    const recent = await Promise.all(
+      Array.from({ length: 10 }, (_, i) => {
+        const d = new Date(Date.now() - i * DAY * 1000)
+        const ymd = d.toISOString().slice(0, 10).replace(/-/g, '')
+        return httpText(`https://data-dbg.krx.co.kr/svc/apis/idx/drvprod_dd_trd?basDd=${ymd}`, {
+          accept: 'application/json',
+          authKey: key,
+          revalidate: HOUR,
+        })
+          .then((text): Point | null => {
+            const rows = (JSON.parse(text) as { OutBlock_1?: KrxDrvRow[] }).OutBlock_1 ?? []
+            // '최소변동성지수' 등 유사명이 많아 정확 일치로 찾는다
+            const r = rows.find((row) => row.IDX_NM === '코스피 200 변동성지수')
+            const v = r ? parseFloat(String(r.CLSPRC_IDX).replace(/,/g, '')) : NaN
+            if (!Number.isFinite(v)) return null // 휴장일
+            const t = Date.parse(`${ymd.slice(0, 4)}-${ymd.slice(4, 6)}-${ymd.slice(6, 8)}`)
+            return { t, v: round(v, 2) }
+          })
+          .catch(() => null)
+      }),
+    )
+
+    const byT = new Map(seed.map((p) => [p.t, p.v]))
+    for (const p of recent) if (p) byT.set(p.t, p.v)
+    const history: Point[] = [...byT.entries()].map(([t, v]) => ({ t, v })).sort((a, b) => a.t - b.t)
+
+    const last = history[history.length - 1]
+    if (!last) throw new Error('vkospi: no data (백필 미실행 + 최근 조회 실패)')
+    return {
+      key: 'vkospi',
+      value: last.v,
+      asOf: dateLabel(last.t),
+      zone: classify('vkospi', last.v),
+      history,
+    }
+  } catch (e) {
+    return errItem('vkospi', e)
+  }
+}
+
+// 5개 지표를 병렬로 수집. 개별 실패는 errItem으로 격리되어 페이지 전체를 죽이지 않는다.
 export async function getAllIndicators(): Promise<Indicator[]> {
-  const keys: IndicatorKey[] = ['buffett', 'cape', 'vix', 'feargreed']
-  const settled = await Promise.allSettled([getBuffett(), getCape(), getVix(), getFearGreed()])
+  const keys: IndicatorKey[] = ['buffett', 'cape', 'vix', 'feargreed', 'vkospi']
+  const settled = await Promise.allSettled([getBuffett(), getCape(), getVix(), getFearGreed(), getVkospi()])
   return settled.map((s, i) => (s.status === 'fulfilled' ? s.value : errItem(keys[i], s.reason)))
 }

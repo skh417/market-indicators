@@ -1,4 +1,4 @@
-export type IndicatorKey = 'buffett' | 'cape' | 'vix' | 'feargreed'
+export type IndicatorKey = 'buffett' | 'cape' | 'vix' | 'feargreed' | 'vkospi'
 
 // t: unix milliseconds, v: value
 export type Point = { t: number; v: number }
