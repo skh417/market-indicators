@@ -12,9 +12,10 @@ type Props = {
   height?: number
 }
 
+// UTC 고정: 로컬 시간대 게터를 쓰면 서버(UTC)와 브라우저(KST)가 다른 라벨을 만들어 하이드레이션 불일치(#418)
 const fmtMonth = (t: number) => {
   const d = new Date(t)
-  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}`
+  return `${d.getUTCFullYear()}.${String(d.getUTCMonth() + 1).padStart(2, '0')}`
 }
 
 const Y_W = 44
