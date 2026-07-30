@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { parseFredCsv, computeBuffettSeries, parseCapeCurrent, parseCapeTable } from './indicators'
+import { parseFredCsv, parseFredJson, computeBuffettSeries, parseCapeCurrent, parseCapeTable } from './indicators'
 import { classify } from '../constants/zones'
 
 test('parseFredCsv: skips header + "." missing values', () => {
@@ -9,6 +9,20 @@ test('parseFredCsv: skips header + "." missing values', () => {
   assert.equal(pts.length, 2) // header + "." row dropped
   assert.equal(pts[0].v, 71863086)
   assert.equal(pts[1].v, 69511628)
+})
+
+test('parseFredJson: parses observations + "." missing values', () => {
+  const json = JSON.stringify({
+    observations: [
+      { date: '2025-10-01', value: '71863086' },
+      { date: '2026-01-01', value: '.' },
+      { date: '2026-04-01', value: '69511628' },
+    ],
+  })
+  const pts = parseFredJson(json)
+  assert.equal(pts.length, 2)
+  assert.equal(pts[0].v, 71863086)
+  assert.equal(pts[1].t, Date.parse('2026-04-01'))
 })
 
 test('computeBuffettSeries: known inputs → ~218%', () => {

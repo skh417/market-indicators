@@ -40,6 +40,7 @@ function round(v: number, p = 2): number {
 }
 
 function errItem(key: IndicatorKey, e: unknown): Indicator {
+  console.error(`[indicators] ${key} failed:`, e instanceof Error ? e.message : e)
   return {
     key,
     value: null,
@@ -84,6 +85,38 @@ export function parseFredCsv(text: string): Point[] {
   return out
 }
 
+// FRED 공식 API(JSON). 결측치는 value "."
+export function parseFredJson(text: string): Point[] {
+  const obs = (JSON.parse(text).observations ?? []) as { date: string; value: string }[]
+  const out: Point[] = []
+  for (const o of obs) {
+    const v = parseFloat(o.value)
+    if (!Number.isFinite(v)) continue
+    const t = Date.parse(o.date)
+    if (Number.isNaN(t)) continue
+    out.push({ t, v })
+  }
+  return out
+}
+
+// fredgraph.csv(무키)는 Akamai WAF가 데이터센터 IP·비브라우저 지문을 차단해 Vercel에서 간헐 실패.
+// FRED_API_KEY가 있으면 공식 API를 쓰고, 없으면 CSV 폴백(로컬 개발용).
+async function fredSeries(id: string): Promise<Point[]> {
+  const key = process.env.FRED_API_KEY
+  if (key) {
+    const json = await httpText(
+      `https://api.stlouisfed.org/fred/series/observations?series_id=${id}&api_key=${key}&file_type=json`,
+      { revalidate: DAY },
+    )
+    return parseFredJson(json)
+  }
+  const csv = await httpText(`https://fred.stlouisfed.org/graph/fredgraph.csv?id=${id}`, {
+    ua: PLAIN_UA,
+    revalidate: DAY,
+  })
+  return parseFredCsv(csv)
+}
+
 // 시가총액(백만$)과 GDP(십억$)를 분기 날짜로 조인 → 버핏 지수(%)
 export function computeBuffettSeries(equitiesMillions: Point[], gdpBillions: Point[]): Point[] {
   const gdpByT = new Map(gdpBillions.map((p) => [p.t, p.v]))
@@ -98,17 +131,8 @@ export function computeBuffettSeries(equitiesMillions: Point[], gdpBillions: Poi
 
 async function getBuffett(): Promise<Indicator> {
   try {
-    const [eq, gdp] = await Promise.all([
-      httpText('https://fred.stlouisfed.org/graph/fredgraph.csv?id=NCBEILQ027S', {
-        ua: PLAIN_UA,
-        revalidate: DAY,
-      }),
-      httpText('https://fred.stlouisfed.org/graph/fredgraph.csv?id=GDP', {
-        ua: PLAIN_UA,
-        revalidate: DAY,
-      }),
-    ])
-    const series = computeBuffettSeries(parseFredCsv(eq), parseFredCsv(gdp))
+    const [eq, gdp] = await Promise.all([fredSeries('NCBEILQ027S'), fredSeries('GDP')])
+    const series = computeBuffettSeries(eq, gdp)
     if (series.length === 0) throw new Error('buffett: empty series')
     const last = series[series.length - 1]
     return {
