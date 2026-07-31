@@ -112,7 +112,7 @@ export default function ReportSection() {
 
       {state.phase === 'idle' && (
         <p style={{ fontSize: 'var(--fs-blurb)', color: 'var(--faint)' }}>
-          버튼을 누르면 현재 5개 지표를 AI가 분석한 한국어 요약이 생성됩니다. 보고서는 1시간 단위로 캐시됩니다.
+          버튼을 누르면 현재 6개 지표를 AI가 분석한 한국어 요약이 생성됩니다. 보고서는 1시간 단위로 캐시됩니다.
         </p>
       )}
       {state.phase === 'error' && (

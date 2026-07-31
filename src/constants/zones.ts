@@ -46,6 +46,13 @@ const BANDS: Record<IndicatorKey, Band[]> = {
     { max: 35, zone: { ko: '공포', en: 'High fear', color: C.orange } },
     { max: Infinity, zone: { ko: '극심한 공포', en: 'Extreme fear', color: C.red } },
   ],
+  // 코스피 외국인 일별 순매수(조원). ponytail: ±1조를 '대규모' 경계로 쓰는 휴리스틱 — 필요시 조정.
+  kospiflow: [
+    { max: -1, zone: { ko: '외국인 대규모 순매도', en: 'Heavy foreign selling', color: C.red } },
+    { max: 0, zone: { ko: '외국인 순매도', en: 'Foreign net selling', color: C.orange } },
+    { max: 1, zone: { ko: '외국인 순매수', en: 'Foreign net buying', color: C.teal } },
+    { max: Infinity, zone: { ko: '외국인 대규모 순매수', en: 'Heavy foreign buying', color: C.green } },
+  ],
   // CNN 공포·탐욕 지수. 색상은 CNN 시각 관례(공포=적/주황, 탐욕=녹)를 따름 — 매수/매도 신호 아님.
   feargreed: [
     { max: 25, zone: { ko: '극심한 공포', en: 'Extreme Fear', color: C.red } },

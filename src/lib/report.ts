@@ -13,8 +13,8 @@ function stats(history: Point[]) {
   return {
     최근값: last.v,
     '1년전값': yearAgo?.v ?? null,
-    '기간최고(5년)': Math.max(...vs),
-    '기간최저(5년)': Math.min(...vs),
+    기간최고: Math.max(...vs),
+    기간최저: Math.min(...vs),
   }
 }
 
@@ -28,6 +28,7 @@ function summarize(indicators: Indicator[]) {
       상태: ind.zone ? `${ind.zone.ko} (${ind.zone.en})` : '분류 불가',
       구간임계값: zoneThresholds(ind.key),
       설명: L.blurbKo,
+      ...(ind.note ? { 부가정보: ind.note } : {}),
       히스토리: stats(ind.history),
     }
   })

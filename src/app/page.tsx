@@ -34,7 +34,7 @@ export default async function Home() {
       <ReportSection />
 
       <footer className={styles.foot}>
-        데이터는 공개 소스(FRED · multpl · Cboe/Yahoo · CNN · KRX)에서 수집되며 최대 1시간 캐시됩니다.
+        데이터는 공개 소스(FRED · multpl · Cboe/Yahoo · CNN · KRX · 네이버)에서 수집되며 최대 1시간 캐시됩니다.
         투자 조언이 아닙니다. · Data from public sources, cached up to 1 hour. Not investment advice.
       </footer>
     </main>

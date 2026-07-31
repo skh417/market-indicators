@@ -21,13 +21,16 @@ export default function IndicatorCard({ indicator }: { indicator: Indicator }) {
 
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-12)', flexWrap: 'wrap' }}>
           <span style={{ fontSize: 'var(--fs-card-value)', fontWeight: 'var(--fw-extrabold)', fontVariantNumeric: 'var(--numeric-metric)', letterSpacing: 'var(--ls-card-value)', color }}>
-            {value != null ? `${value.toFixed(L.decimals)}${L.unit}` : '—'}
+            {value != null ? `${value.toLocaleString('en-US', { minimumFractionDigits: L.decimals, maximumFractionDigits: L.decimals })}${L.unit}` : '—'}
           </span>
           {(indicator.key === 'vix' || indicator.key === 'vkospi') && value != null && (
             // 16의 법칙: 연율화 변동성 ÷ 16(≈√252) ≒ 일일 기대 변동폭(%)
             <span style={{ fontSize: 'var(--fs-asof)', color: 'var(--faint)', fontVariantNumeric: 'var(--numeric-metric)' }}>
               ≈ 일일 ±{(value / 16).toFixed(2)}%
             </span>
+          )}
+          {indicator.note && (
+            <span style={{ fontSize: 'var(--fs-asof)', color: 'var(--faint)', fontVariantNumeric: 'var(--numeric-metric)' }}>{indicator.note}</span>
           )}
           <span style={{ fontSize: 'var(--fs-asof)', color: 'var(--muted)' }}>
             {error ? '일시적으로 불러올 수 없음 · Temporarily unavailable' : indicator.asOf}
@@ -45,7 +48,7 @@ export default function IndicatorCard({ indicator }: { indicator: Indicator }) {
       </div>
 
       <div style={{ minWidth: 0, display: 'flex', alignItems: 'center' }}>
-        <IndicatorChart data={indicator.history} color={color} thresholds={zoneThresholds(indicator.key)} unit={L.unit} decimals={L.decimals} height={240} />
+        <IndicatorChart data={indicator.history} series={indicator.series} color={color} thresholds={zoneThresholds(indicator.key)} unit={L.unit} decimals={L.decimals} height={240} />
       </div>
     </section>
   )

@@ -47,6 +47,15 @@ export const LABELS: Record<IndicatorKey, Label> = {
     decimals: 2,
     source: 'KRX Open API',
   },
+  kospiflow: {
+    ko: '코스피 투자자별 수급',
+    en: 'KOSPI Investor Flows',
+    blurbKo: '코스피 외국인·기관·개인의 일별 순매수 금액. 대표값과 배지는 외국인 기준입니다.',
+    blurbEn: 'Daily net purchases by foreign, institutional, and retail investors on KOSPI. Value and badge track foreigners.',
+    unit: '조원',
+    decimals: 2,
+    source: '네이버 금융',
+  },
   feargreed: {
     ko: '공포·탐욕 지수',
     en: 'CNN Fear & Greed',
@@ -61,6 +70,6 @@ export const LABELS: Record<IndicatorKey, Label> = {
 export const SITE = {
   titleKo: '시장 밸류에이션 대시보드',
   titleEn: 'Market Valuation Dashboard',
-  descKo: '버핏 지수·CAPE·VIX·공포탐욕지수·VKOSPI로 보는 증시 밸류에이션과 심리',
-  descEn: 'Market valuation & sentiment: Buffett Indicator, Shiller CAPE, VIX, CNN Fear & Greed, and VKOSPI.',
+  descKo: '버핏 지수·CAPE·VIX·공포탐욕지수·VKOSPI·코스피 투자자별 수급으로 보는 증시 밸류에이션과 심리',
+  descEn: 'Market valuation & sentiment: Buffett Indicator, Shiller CAPE, VIX, CNN Fear & Greed, VKOSPI, and KOSPI investor flows.',
 }

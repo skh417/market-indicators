@@ -13,7 +13,7 @@ const cachedReport = unstable_cache(
     const sections = await generateReport(indicators)
     return { sections, generatedAt: Date.now() }
   },
-  ['ai-report-v2'],
+  ['ai-report-v4'],
   { revalidate: 3600 },
 )
 

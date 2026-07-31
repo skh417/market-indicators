@@ -1,6 +1,7 @@
 import type { Indicator, IndicatorKey, Point } from './types'
 import { classify } from '../constants/zones'
 import seed from '../data/vkospi-seed'
+import kospiflowSeed from '../data/kospiflow-seed'
 
 const BROWSER_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
@@ -18,7 +19,7 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return Promise.race([p.finally(() => clearTimeout(timer)), timeout])
 }
 
-type FetchOpts = { ua?: string; accept?: string; referer?: string; authKey?: string; revalidate: number }
+type FetchOpts = { ua?: string; accept?: string; referer?: string; authKey?: string; encoding?: string; revalidate: number }
 
 async function httpText(url: string, opts: FetchOpts): Promise<string> {
   const headers: Record<string, string> = {}
@@ -31,6 +32,8 @@ async function httpText(url: string, opts: FetchOpts): Promise<string> {
     12_000,
   )
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`)
+  // EUC-KR 등 비UTF-8 응답은 바이트로 받아 직접 디코드
+  if (opts.encoding) return new TextDecoder(opts.encoding).decode(await withTimeout(res.arrayBuffer(), 12_000))
   return withTimeout(res.text(), 12_000)
 }
 
@@ -344,9 +347,84 @@ async function getVkospi(): Promise<Indicator> {
   }
 }
 
-// 5개 지표를 병렬로 수집. 개별 실패는 errItem으로 격리되어 페이지 전체를 죽이지 않는다.
+// ── 코스피 투자자별 수급 (네이버 금융) ─────────────────────────────────
+// finance.naver.com 일별 투자자별 매매동향 iframe(EUC-KR HTML, 10거래일/페이지).
+// 행: <td class="date2">YY.MM.DD</td> 뒤로 개인·외국인·기관계 순의 숫자 셀(억원).
+export type FlowRow = { t: number; personal: number; foreign: number; institution: number }
+
+export function parseInvestorTable(html: string): FlowRow[] {
+  const N = '<td[^>]*>\\s*(-?[\\d,]+)\\s*<\\/td>'
+  const re = new RegExp(`<td class="date2">(\\d{2})\\.(\\d{2})\\.(\\d{2})<\\/td>\\s*${N}\\s*${N}\\s*${N}`, 'g')
+  const num = (s: string) => parseInt(s.replace(/,/g, ''), 10)
+  const out: FlowRow[] = []
+  let m: RegExpExecArray | null
+  while ((m = re.exec(html))) {
+    const t = Date.parse(`20${m[1]}-${m[2]}-${m[3]}`)
+    const [personal, foreign, institution] = [num(m[4]), num(m[5]), num(m[6])]
+    if (!Number.isNaN(t) && [personal, foreign, institution].every(Number.isFinite))
+      out.push({ t, personal, foreign, institution })
+  }
+  return out.sort((a, b) => a.t - b.t)
+}
+
+async function getKospiFlow(): Promise<Indicator> {
+  try {
+    // 과거분은 시드(scripts/backfill-kospiflow.mjs 생성)에서 읽고 최근 2페이지(~20거래일)만 API로 병합.
+    // 원천(시드·네이버)은 억원 단위 — 표시는 조원이라 마지막에 ÷10,000.
+    // ponytail: 시드 종료 후 20거래일 넘게 지나면 공백 — 백필 재실행으로 해결.
+    const byT = new Map<number, FlowRow>(kospiflowSeed.map((r) => [r.t, r]))
+    let latest: FlowRow | null = null
+    // 서버는 UTC — KST(+9h)로 보정한 오늘 날짜에서 시작해 과거로 페이지네이션
+    let biz = new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10).replace(/-/g, '')
+    try {
+      for (let i = 0; i < 2; i++) {
+        const html = await httpText(
+          `https://finance.naver.com/sise/investorDealTrendDay.naver?bizdate=${biz}&sosok=01`,
+          { ua: BROWSER_UA, referer: 'https://finance.naver.com/sise/', encoding: 'euc-kr', revalidate: HOUR },
+        )
+        const page = parseInvestorTable(html)
+        if (page.length === 0) break
+        for (const r of page) byT.set(r.t, r)
+        const pageLast = page[page.length - 1]
+        if (!latest || pageLast.t > latest.t) latest = pageLast
+        biz = new Date(page[0].t - DAY * 1000).toISOString().slice(0, 10).replace(/-/g, '') // 최고(最古)일 하루 전
+      }
+    } catch (e) {
+      // 실시간 조회 실패해도 시드만으로 렌더 (개인/기관 note만 생략됨)
+      console.error('[indicators] kospiflow live fetch failed:', e instanceof Error ? e.message : e)
+    }
+    const rows = [...byT.values()].sort((a, b) => a.t - b.t)
+    const last = rows[rows.length - 1]
+    if (!last) throw new Error('kospiflow: no data (백필 미실행 + 최근 조회 실패)')
+    const eokToJo = (v: number) => round(v / 10_000, 2)
+    const fmt = (v: number) => (v > 0 ? '+' : '') + eokToJo(v).toFixed(2)
+    const pick = (f: (r: FlowRow) => number): Point[] => rows.map((r) => ({ t: r.t, v: eokToJo(f(r)) }))
+    const foreign = pick((r) => r.foreign)
+    return {
+      key: 'kospiflow',
+      value: eokToJo(last.foreign),
+      asOf: dateLabel(last.t),
+      zone: classify('kospiflow', eokToJo(last.foreign)),
+      history: foreign,
+      // 순서 고정 — IndicatorChart의 시리즈 색 슬롯(외국인/기관/개인)과 매칭
+      series: [
+        { name: '외국인', points: foreign },
+        { name: '기관', points: pick((r) => r.institution) },
+        { name: '개인', points: pick((r) => r.personal) },
+      ],
+      // 개인/기관 값은 실시간 조회의 최신일이 화면의 최신일과 일치할 때만 표기
+      ...(latest && latest.t === last.t
+        ? { note: `개인 ${fmt(latest.personal)}조 · 기관 ${fmt(latest.institution)}조` }
+        : {}),
+    }
+  } catch (e) {
+    return errItem('kospiflow', e)
+  }
+}
+
+// 6개 지표를 병렬로 수집. 개별 실패는 errItem으로 격리되어 페이지 전체를 죽이지 않는다.
 export async function getAllIndicators(): Promise<Indicator[]> {
-  const keys: IndicatorKey[] = ['buffett', 'cape', 'vix', 'feargreed', 'vkospi']
-  const settled = await Promise.allSettled([getBuffett(), getCape(), getVix(), getFearGreed(), getVkospi()])
+  const keys: IndicatorKey[] = ['buffett', 'cape', 'vix', 'feargreed', 'vkospi', 'kospiflow']
+  const settled = await Promise.allSettled([getBuffett(), getCape(), getVix(), getFearGreed(), getVkospi(), getKospiFlow()])
   return settled.map((s, i) => (s.status === 'fulfilled' ? s.value : errItem(keys[i], s.reason)))
 }

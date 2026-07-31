@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { parseFredCsv, parseFredJson, computeBuffettSeries, parseCapeCurrent, parseCapeTable } from './indicators'
+import { parseFredCsv, parseFredJson, computeBuffettSeries, parseCapeCurrent, parseCapeTable, parseInvestorTable } from './indicators'
 import { classify } from '../constants/zones'
 
 test('parseFredCsv: skips header + "." missing values', () => {
@@ -63,6 +63,34 @@ test('parseCapeTable: parses rows, skips &#x2002; entity, sorts ascending', () =
   assert.equal(pts[1].v, 41.77)
   // must NOT have picked up "2002" from &#x2002;
   assert.ok(pts.every((p) => p.v < 100))
+})
+
+test('parseInvestorTable: parses date2 rows, first 3 numeric cells only, sorts ascending', () => {
+  const html =
+    '<tr>\n<td class="date2">26.07.31</td>\n<td class="rate_down3">-82,740</td>\n' +
+    '<td class="rate_up3">72,414</td>\n<td class="rate_up3">11,397</td>\n' +
+    '<td class="rate_down3">-6,447</td>\n<td class="rate_up3">342</td>\n</tr>\n' +
+    '<tr><td class="blank_07"></td><td class="division_line" colspan="10"></td></tr>\n' +
+    '<tr>\n<td class="date2">26.07.30</td>\n<td class="rate_down3">-14,309</td>\n' +
+    '<td class="rate_up3">13,280</td>\n<td class="rate_up3">805</td>\n</tr>'
+  const rows = parseInvestorTable(html)
+  assert.equal(rows.length, 2)
+  // 오름차순: 07.30이 먼저
+  assert.equal(rows[0].t, Date.parse('2026-07-30'))
+  assert.deepEqual(rows[1], {
+    t: Date.parse('2026-07-31'),
+    personal: -82740,
+    foreign: 72414,
+    institution: 11397,
+  })
+})
+
+test('classify: kospiflow bands (조원 단위)', () => {
+  assert.equal(classify('kospiflow', -1.5)?.en, 'Heavy foreign selling')
+  assert.equal(classify('kospiflow', -0.1)?.ko, '외국인 순매도')
+  assert.equal(classify('kospiflow', 0)?.ko, '외국인 순매수') // value < max 규칙상 0은 순매수 밴드
+  assert.equal(classify('kospiflow', 0.5)?.en, 'Foreign net buying')
+  assert.equal(classify('kospiflow', 2)?.en, 'Heavy foreign buying')
 })
 
 test('classify: zone boundaries per indicator', () => {
