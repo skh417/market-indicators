@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: `${SITE.titleKo} · ${SITE.titleEn}`,
   description: `${SITE.descKo} / ${SITE.descEn}`,
-  keywords: ['버핏 지수', 'Buffett Indicator', 'CAPE', 'Shiller PE', 'VIX', 'Fear and Greed', 'VKOSPI', '코스피 변동성지수', '시장 밸류에이션'],
+  keywords: ['버핏 지수', 'Buffett Indicator', 'CAPE', 'Shiller PE', 'VIX', 'Fear and Greed', 'VKOSPI', '코스피 변동성지수', '시장 밸류에이션', '실적 캘린더', '경제 일정'],
   openGraph: {
     title: `${SITE.titleKo} · ${SITE.titleEn}`,
     description: SITE.descKo,

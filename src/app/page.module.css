@@ -26,6 +26,21 @@
   font-size: var(--fs-h1-en);
 }
 
+.titleRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-12);
+  flex-wrap: wrap;
+}
+
+.calendarLink {
+  color: var(--accent);
+  font-size: var(--fs-badge);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+}
+
 .sub {
   color: var(--muted);
   font-size: var(--fs-sub);
