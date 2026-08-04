@@ -9,6 +9,18 @@ export const revalidate = 3600
 export const metadata: Metadata = {
   title: '이벤트 캘린더',
   description: '미국·한국의 주요 거시 발표와 시장 영향 기업 실적 일정',
+  // openGraph/twitter는 부모에서 객체 단위로 상속되므로 여기서 재정의해야 캘린더 메타가 나간다
+  openGraph: {
+    title: '이벤트 캘린더 · Event calendar',
+    description: '미국·한국의 주요 거시 발표와 시장 영향 기업 실적 일정',
+    type: 'website',
+    locale: 'ko_KR',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '이벤트 캘린더 · Event calendar',
+    description: 'US & Korea macro and earnings schedule.',
+  },
 }
 
 export default async function CalendarPage() {

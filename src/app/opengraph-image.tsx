@@ -44,11 +44,18 @@ async function loadFont(weight: number): Promise<ArrayBuffer> {
 }
 
 export default async function Image() {
-  const [indicators, w500, w700, w800] = await Promise.all([
+  // ponytail: 폰트 로딩 실패 시 기본 폰트로라도 OG는 살린다 — 재검증 시점 Google Fonts 장애가 500으로 번지는 것 방지
+  const [indicators, fontOptions] = await Promise.all([
     getAllIndicators(),
-    loadFont(500),
-    loadFont(700),
-    loadFont(800),
+    Promise.all([loadFont(500), loadFont(700), loadFont(800)])
+      .then(([w500, w700, w800]) => ({
+        fonts: [
+          { name: 'NotoSansKR', data: w500, weight: 500 as const, style: 'normal' as const },
+          { name: 'NotoSansKR', data: w700, weight: 700 as const, style: 'normal' as const },
+          { name: 'NotoSansKR', data: w800, weight: 800 as const, style: 'normal' as const },
+        ],
+      }))
+      .catch(() => ({})),
   ])
   const items = OG_ITEMS.map(({ key, short }) => {
     const ind = indicators.find((i) => i.key === key)
@@ -108,13 +115,6 @@ export default async function Image() {
         </div>
       </div>
     ),
-    {
-      ...size,
-      fonts: [
-        { name: 'NotoSansKR', data: w500, weight: 500, style: 'normal' },
-        { name: 'NotoSansKR', data: w700, weight: 700, style: 'normal' },
-        { name: 'NotoSansKR', data: w800, weight: 800, style: 'normal' },
-      ],
-    },
+    { ...size, ...fontOptions },
   )
 }
