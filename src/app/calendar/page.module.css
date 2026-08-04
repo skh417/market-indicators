@@ -1,5 +1,6 @@
 .main {
-  max-width: var(--layout-max);
+  /* 시안 셸 폭 — 대시보드(--layout-max)보다 좁은 단일 컬럼 */
+  max-width: 760px;
   margin: 0 auto;
   padding: var(--layout-pad-top) var(--layout-pad-x) var(--layout-pad-bottom);
   display: flex;
@@ -10,7 +11,7 @@
 .top {
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
+  gap: var(--space-4);
   padding: 8px 4px 0;
 }
 
@@ -19,24 +20,34 @@
   font-size: var(--fs-badge);
   font-weight: var(--fw-semibold);
   width: fit-content;
+  margin-bottom: var(--space-4);
 }
 
 .h1 {
-  font-size: var(--fs-h1);
-  font-weight: var(--fw-extrabold);
-  letter-spacing: var(--ls-h1);
+  font-size: 20px;
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.01em;
 }
 
 .h1 span {
-  color: var(--muted);
-  font-size: var(--fs-h1-en);
+  color: var(--faint);
+  font-size: 16px;
   font-weight: var(--fw-medium);
 }
 
-.sub { color: var(--muted); font-size: var(--fs-sub); max-width: var(--measure-sub); }
-.card { padding: var(--card-pad); background: var(--surface-card); border: var(--border-width) solid var(--border); border-radius: var(--radius-card); display: flex; flex-direction: column; gap: var(--stack-card); }
-.note { color: var(--faint); font-size: var(--fs-foot); line-height: var(--lh-foot); }
+.sub {
+  color: var(--muted);
+  font-size: 13.5px;
+}
 
-@media (max-width: 600px) {
-  .card { padding: 14px; }
+.sub span {
+  color: var(--faint);
+  font-size: 12.5px;
+}
+
+.note {
+  border-top: var(--border-width) solid var(--border);
+  padding-top: 14px;
+  color: var(--faint);
+  font-size: 12px;
 }

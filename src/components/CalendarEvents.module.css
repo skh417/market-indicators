@@ -1,0 +1,163 @@
+/* CalendarSection 시안(데이 카드) — 수치는 시안 그대로, 색·radius·굵기는 전역 토큰 */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.divider {
+  width: var(--border-width);
+  height: 16px;
+  background: var(--border);
+  margin: 0 8px;
+}
+
+.tab {
+  font: inherit;
+  cursor: pointer;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: var(--fw-medium);
+  color: var(--faint);
+  border: var(--border-width) solid var(--border);
+  background: transparent;
+}
+
+.tabActive {
+  color: var(--accent);
+  border-color: currentColor;
+  background: color-mix(in srgb, currentColor var(--badge-tint), transparent);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.group {
+  background: var(--surface-card);
+  border: var(--border-width) solid var(--border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 18px;
+}
+
+.dayLabel {
+  font-size: 14.5px;
+  font-weight: var(--fw-bold);
+}
+
+/* D-day·상태 공용 pill — 색은 조합 클래스가 지정 */
+.pill {
+  display: inline-flex;
+  border: var(--border-width) solid currentColor;
+  background: color-mix(in srgb, currentColor var(--badge-tint), transparent);
+  border-radius: var(--radius-pill);
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+}
+
+.ddayToday { color: var(--zone-red); }
+.ddayTomorrow { color: var(--zone-yellow); }
+
+.ddaySoon {
+  color: var(--faint);
+  font-size: 12.5px;
+  font-variant-numeric: var(--numeric-metric);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 13px 18px;
+  border-top: var(--border-width) solid var(--border);
+}
+
+.marketPill {
+  justify-self: start;
+  border: var(--border-width) solid var(--border);
+  color: var(--muted);
+  border-radius: var(--radius-pill);
+  padding: 2px 9px;
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.title {
+  font-size: 14.5px;
+  font-weight: var(--fw-bold);
+}
+
+.vals {
+  font-size: 12.5px;
+  color: var(--muted);
+  font-variant-numeric: var(--numeric-metric);
+}
+
+.statusCol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.stConfirmed { color: var(--accent); }
+.stEstimated { color: var(--zone-yellow); }
+.stReleased { color: var(--zone-teal); }
+
+.sourceLink {
+  font-size: 11.5px;
+  color: var(--faint);
+  white-space: nowrap;
+}
+
+.empty {
+  border: var(--border-width) dashed var(--border);
+  border-radius: var(--radius-card);
+  padding: 28px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.emptyKo {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.emptyEn {
+  font-size: 12.5px;
+  color: var(--faint);
+}
+
+@media (max-width: 600px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 8px;
+  }
+  .marketPill {
+    grid-column: 1 / -1;
+  }
+}

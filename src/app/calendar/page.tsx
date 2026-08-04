@@ -7,7 +7,7 @@ import styles from './page.module.css'
 export const revalidate = 3600
 
 export const metadata: Metadata = {
-  title: '시장 이벤트 캘린더',
+  title: '이벤트 캘린더',
   description: '미국·한국의 주요 거시 발표와 시장 영향 기업 실적 일정',
 }
 
@@ -17,13 +17,11 @@ export default async function CalendarPage() {
     <main className={styles.main}>
       <header className={styles.top}>
         <Link href="/" className={styles.back}>← 대시보드</Link>
-        <h1 className={styles.h1}>시장 이벤트 캘린더 <span>· Market Calendar</span></h1>
-        <p className={styles.sub}>미국·한국의 주요 거시 발표와 시장 영향 기업의 실적 일정을 모았습니다. 예정 실적은 변경될 수 있으므로 상태와 원문 출처를 함께 확인하세요.</p>
+        <h1 className={styles.h1}>이벤트 캘린더 <span>· Event calendar</span></h1>
+        <p className={styles.sub}>주요 거시 지표와 실적 발표 일정입니다. <span>Key macro and earnings dates.</span></p>
       </header>
-      <section className={styles.card}>
-        <CalendarEvents events={events} now={now} />
-      </section>
-      <p className={styles.note}>일정과 수치는 정보 제공 목적이며 투자 조언이 아닙니다. 무료 공개 데이터의 지연·변경 가능성이 있습니다.</p>
+      <CalendarEvents events={events} now={now} />
+      <p className={styles.note}>일정은 발표 기관 사정에 따라 변경될 수 있습니다. · Schedules may change without notice. — 투자 조언이 아닙니다. · Not investment advice.</p>
     </main>
   )
 }
