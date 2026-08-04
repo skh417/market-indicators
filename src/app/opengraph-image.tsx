@@ -10,21 +10,24 @@ export const contentType = 'image/png'
 
 // Satori는 CSS 변수·color-mix를 지원하지 않음 — 토큰 값을 하드코딩
 const BG = '#070b14'
-const CARD = '#0f1626'
-const BORDER = '#1e293b'
 const FG = '#e8eef7'
 const MUTED = '#9aa8bd'
 const FAINT = '#64748b'
+const ZONE_GRADIENT = 'linear-gradient(90deg, #22c55e, #2dd4bf, #38bdf8, #eab308, #f97316, #ef4444)'
 
-const OG_KEYS: IndicatorKey[] = ['buffett', 'cape', 'vix', 'feargreed']
+// 시안 2b 하단 지표 스트립: 짧은 라벨 + 값
+const OG_ITEMS: { key: IndicatorKey; short: string }[] = [
+  { key: 'buffett', short: '버핏' },
+  { key: 'cape', short: 'CAPE' },
+  { key: 'vix', short: 'VIX' },
+  { key: 'feargreed', short: '공포·탐욕' },
+]
 
 // 폰트 서브셋: OG에 등장할 수 있는 모든 글자 (한글 음절 + 라틴/숫자/기호)
 const FONT_TEXT = [
   ...new Set(
-    '지금 미국 시장은 얼마나 비싼가 밸류에이션 대시보드 버핏 지수 실러 변동성 공포·탐욕' +
-      '저평가 적정 다소 고평가 심각한 매우 안정 경계 극심한 탐욕 중립 데이터 없음' +
-      '매시간 업데이트 투자 조언이 아닙니다' +
-      'CAPE PER VIX Market Valuation Dashboard Updated hourly Not investment advice' +
+    '지금 시장은 얼마나 비싼가 밸류에이션 대시보드 버핏 공포·탐욕' +
+      'CAPE VIX Market Valuation Dashboard' +
       '0123456789.%—-()/ ',
   ),
 ].join('')
@@ -40,11 +43,6 @@ async function loadFont(weight: number): Promise<ArrayBuffer> {
   return fetch(url).then((r) => r.arrayBuffer())
 }
 
-const tint = (hex: string, a: number) => {
-  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
-  return `rgba(${r},${g},${b},${a})`
-}
-
 export default async function Image() {
   const [indicators, w500, w700, w800] = await Promise.all([
     getAllIndicators(),
@@ -52,13 +50,11 @@ export default async function Image() {
     loadFont(700),
     loadFont(800),
   ])
-  const cards = OG_KEYS.map((key) => {
+  const items = OG_ITEMS.map(({ key, short }) => {
     const ind = indicators.find((i) => i.key === key)
     const L = LABELS[key]
     return {
-      label: key === 'vix' ? '변동성 지수 VIX' : L.ko,
-      value: ind?.value != null ? `${ind.value.toFixed(L.decimals)}${L.unit}` : '—',
-      zone: ind?.zone?.ko ?? '데이터 없음',
+      text: `${short} ${ind?.value != null ? `${ind.value.toFixed(L.decimals)}${L.unit}` : '—'}`,
       color: ind?.zone?.color ?? FAINT,
     }
   })
@@ -71,64 +67,44 @@ export default async function Image() {
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'space-between',
-          padding: '60px 72px 52px',
+          justifyContent: 'center',
+          gap: 36,
+          padding: '0 88px',
           backgroundColor: BG,
           backgroundImage: 'radial-gradient(circle at 80% 0%, rgba(56,189,248,0.10) 0%, rgba(7,11,20,0) 55%)',
           color: FG,
           fontFamily: 'NotoSansKR',
         }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ fontSize: 52, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.15 }}>
-            지금 미국 시장은 얼마나 비싼가
+        <div style={{ width: 220, height: 8, borderRadius: 999, backgroundImage: ZONE_GRADIENT }} />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              fontSize: 76,
+              fontWeight: 800,
+              letterSpacing: '-0.03em',
+              lineHeight: 1.12,
+            }}
+          >
+            <div>지금 시장은</div>
+            <div>얼마나 비싼가</div>
           </div>
-          <div style={{ display: 'flex', fontSize: 24, fontWeight: 500, color: MUTED }}>
+          <div style={{ display: 'flex', fontSize: 28, fontWeight: 500, color: MUTED }}>
             시장 밸류에이션 대시보드
             <span style={{ color: FAINT, marginLeft: 8 }}>· Market Valuation Dashboard</span>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 18 }}>
-          {cards.map((c) => (
-            <div
-              key={c.label}
-              style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 12,
-                backgroundColor: CARD,
-                border: `1px solid ${BORDER}`,
-                borderRadius: 16,
-                padding: 24,
-              }}
-            >
-              <div style={{ fontSize: 17, color: MUTED }}>{c.label}</div>
-              <div style={{ fontSize: 44, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1, color: c.color }}>
-                {c.value}
-              </div>
-              <div
-                style={{
-                  alignSelf: 'flex-start',
-                  border: `1px solid ${c.color}`,
-                  backgroundColor: tint(c.color, 0.14),
-                  color: c.color,
-                  borderRadius: 999,
-                  padding: '4px 12px',
-                  fontSize: 15,
-                  fontWeight: 500,
-                }}
-              >
-                {c.zone}
-              </div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, fontSize: 22, color: FAINT }}>
+          {items.map((it, i) => (
+            <div key={it.text} style={{ display: 'flex', alignItems: 'baseline', gap: 14 }}>
+              {i > 0 && <span>·</span>}
+              <span style={{ color: it.color, fontWeight: 700 }}>{it.text}</span>
             </div>
           ))}
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 17, color: FAINT }}>
-          <div>매시간 업데이트 · Updated hourly</div>
-          <div>투자 조언이 아닙니다. · Not investment advice.</div>
         </div>
       </div>
     ),

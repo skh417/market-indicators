@@ -74,3 +74,13 @@ export function classify(key: IndicatorKey, value: number | null): Zone | null {
 export function zoneThresholds(key: IndicatorKey): number[] {
   return BANDS[key].map((b) => b.max).filter((m) => Number.isFinite(m))
 }
+
+// 리포트 프롬프트용: 라벨 붙은 구간 기준 (예: '90 미만: 저평가', '120~150: 다소 고평가')
+export function zoneBandsKo(key: IndicatorKey): string[] {
+  const bands = BANDS[key]
+  return bands.map((b, i) => {
+    const lo = i === 0 ? null : bands[i - 1].max
+    const range = !Number.isFinite(b.max) ? `${lo} 이상` : lo == null ? `${b.max} 미만` : `${lo}~${b.max}`
+    return `${range}: ${b.zone.ko}`
+  })
+}

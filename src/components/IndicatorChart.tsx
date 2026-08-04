@@ -107,7 +107,7 @@ export default function IndicatorChart({ data, color, thresholds = [], unit = ''
   }, [])
 
   if (!data || data.length === 0) {
-    return <div style={{ height, display: 'grid', placeItems: 'center', color: 'var(--chart-empty)', fontSize: 13 }}>차트 데이터 없음 · No chart data</div>
+    return <div style={{ height, display: 'grid', placeItems: 'center', color: 'var(--chart-empty)', fontSize: 'var(--fs-chart-tooltip)' }}>차트 데이터 없음 · No chart data</div>
   }
 
   const multi = series && series.length > 1 ? series : null
@@ -219,7 +219,7 @@ export default function IndicatorChart({ data, color, thresholds = [], unit = ''
       )}
       {hover && (
         <div style={{ position: 'absolute', left: Math.min(w - 130, Math.max(0, X(hover.t) - 60)), top: Math.max(0, Y(hover.v) - 52), pointerEvents: 'none', background: 'var(--chart-tooltip-bg)', border: 'var(--border-width) solid var(--chart-tooltip-border)', borderRadius: 'var(--radius-tooltip)', color: 'var(--chart-tooltip-fg)', fontSize: 'var(--fs-chart-tooltip)', padding: '6px 10px', fontVariantNumeric: 'var(--numeric-metric)' }}>
-          <div style={{ color: 'var(--muted)', fontSize: 11 }}>{t1 - t0 < DAILY_SPAN ? fmtDate(hover.t) : fmtMonth(hover.t)}</div>
+          <div style={{ color: 'var(--muted)', fontSize: 'var(--fs-chart-tick)' }}>{t1 - t0 < DAILY_SPAN ? fmtDate(hover.t) : fmtMonth(hover.t)}</div>
           {hover.v.toFixed(decimals)}
           {unit}
         </div>

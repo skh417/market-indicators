@@ -62,8 +62,8 @@
   --fs-source: 0.74rem;
   --fs-scale: 0.72rem;
   --fs-foot: 0.78rem;
-  --fs-chart-tick: 11px;
-  --fs-chart-tooltip: 13px;
+  --fs-chart-tick: 0.6875rem;
+  --fs-chart-tooltip: 0.8125rem;
   --lh-base: 1.5;
   --lh-title: 1.35;
   --lh-blurb: 1.5;
@@ -120,6 +120,8 @@
 
 html {
   height: 100%;
+  /* 전역 타이포 스케일 — rem 기반 --fs-* 토큰이 모두 이 값에 비례 (16px → 17px) */
+  font-size: 106.25%;
 }
 
 html,
