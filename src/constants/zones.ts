@@ -61,6 +61,35 @@ const BANDS: Record<IndicatorKey, Band[]> = {
     { max: 75, zone: { ko: '탐욕', en: 'Greed', color: C.teal } },
     { max: Infinity, zone: { ko: '극심한 탐욕', en: 'Extreme Greed', color: C.green } },
   ],
+  // ponytail: 장기 평균·위기 구간을 바탕으로 한 고정 휴리스틱. 신용시장 국면별 백분위로 고도화 가능.
+  hyspread: [
+    { max: 3, zone: { ko: '매우 안정', en: 'Very calm', color: C.green } },
+    { max: 5, zone: { ko: '안정', en: 'Calm', color: C.teal } },
+    { max: 7, zone: { ko: '경계', en: 'Elevated', color: C.yellow } },
+    { max: 10, zone: { ko: '신용 스트레스', en: 'Credit stress', color: C.orange } },
+    { max: Infinity, zone: { ko: '심각한 스트레스', en: 'Severe stress', color: C.red } },
+  ],
+  nfci: [
+    { max: -0.5, zone: { ko: '완화적', en: 'Loose', color: C.green } },
+    { max: 0, zone: { ko: '평균 이하 긴축', en: 'Below-average tightness', color: C.teal } },
+    { max: 0.5, zone: { ko: '중립', en: 'Neutral', color: C.blue } },
+    { max: 1, zone: { ko: '긴축적', en: 'Tight', color: C.orange } },
+    { max: Infinity, zone: { ko: '강한 긴축', en: 'Very tight', color: C.red } },
+  ],
+  usdwkrw: [
+    { max: -3, zone: { ko: '원화 강세', en: 'Won strengthening', color: C.green } },
+    { max: 0, zone: { ko: '완만한 원화 강세', en: 'Mild won strength', color: C.teal } },
+    { max: 3, zone: { ko: '안정', en: 'Stable', color: C.blue } },
+    { max: 6, zone: { ko: '원화 약세', en: 'Won weakening', color: C.orange } },
+    { max: Infinity, zone: { ko: '급격한 원화 약세', en: 'Sharp won weakness', color: C.red } },
+  ],
+  exports: [
+    { max: -10, zone: { ko: '수출 급감', en: 'Sharp contraction', color: C.red } },
+    { max: 0, zone: { ko: '수출 감소', en: 'Contraction', color: C.orange } },
+    { max: 10, zone: { ko: '완만한 증가', en: 'Moderate growth', color: C.blue } },
+    { max: 20, zone: { ko: '강한 증가', en: 'Strong growth', color: C.teal } },
+    { max: Infinity, zone: { ko: '급증', en: 'Rapid growth', color: C.green } },
+  ],
 }
 
 export function classify(key: IndicatorKey, value: number | null): Zone | null {

@@ -65,6 +65,42 @@ export const LABELS: Record<IndicatorKey, Label> = {
     decimals: 0,
     source: 'CNN Business',
   },
+  hyspread: {
+    ko: '하이일드 신용스프레드',
+    en: 'US High Yield OAS',
+    blurbKo: '미국 하이일드 회사채와 국채의 금리 차이. 높을수록 신용 위험 회피가 큽니다.',
+    blurbEn: 'The yield gap between US high-yield corporates and Treasuries. Higher means greater credit risk aversion.',
+    unit: '%p',
+    decimals: 2,
+    source: 'FRED · ICE BofA',
+  },
+  nfci: {
+    ko: '미국 금융여건지수',
+    en: 'Chicago Fed NFCI',
+    blurbKo: '자금·신용·위험 시장을 종합한 금융여건 지수. 양수일수록 평균보다 긴축적입니다.',
+    blurbEn: 'A composite of US money, debt, equity, and banking conditions. Positive values mean tighter-than-average conditions.',
+    unit: '',
+    decimals: 2,
+    source: 'FRED · Chicago Fed',
+  },
+  usdwkrw: {
+    ko: '원/달러 1개월 변동률',
+    en: 'USD/KRW 1M Change',
+    blurbKo: '최근 20거래일 원/달러 환율 변화율. 양수는 원화 약세, 음수는 원화 강세를 뜻합니다.',
+    blurbEn: 'USD/KRW change over the latest 20 trading days. Positive means a weaker Korean won.',
+    unit: '%',
+    decimals: 2,
+    source: 'FRED · Federal Reserve',
+  },
+  exports: {
+    ko: '한국 수출 증가율',
+    en: 'Korea Export Growth',
+    blurbKo: '전년 동월 대비 한국 상품 수출 증가율. 수출·반도체 경기의 거시 흐름을 보여 줍니다.',
+    blurbEn: 'Year-over-year growth in Korean goods exports, a macro read on the export and semiconductor cycle.',
+    unit: '%',
+    decimals: 1,
+    source: 'FRED · OECD',
+  },
 }
 
 export const SITE = {

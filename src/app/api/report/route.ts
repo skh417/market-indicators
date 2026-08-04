@@ -2,7 +2,7 @@ import { unstable_cache } from 'next/cache'
 import { getAllIndicators } from '@/lib/indicators'
 import { generateReport } from '@/lib/report'
 
-// 지표 수집(외부 API 5곳) + 생성까지의 여유
+// 지표 수집(외부 API 다수) + 생성까지의 여유
 export const maxDuration = 60
 
 // ponytail: 공개 버튼의 비용 상한 — 보고서를 1시간 캐시(지표 갱신 주기와 동일).
@@ -13,7 +13,7 @@ const cachedReport = unstable_cache(
     const sections = await generateReport(indicators)
     return { sections, generatedAt: Date.now() }
   },
-  ['ai-report-v5'],
+  ['ai-report-v6'],
   { revalidate: 3600 },
 )
 

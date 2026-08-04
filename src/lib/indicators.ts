@@ -42,6 +42,12 @@ function round(v: number, p = 2): number {
   return Math.round(v * f) / f
 }
 
+function recentPoints(points: Point[], years = 5): Point[] {
+  const last = points[points.length - 1]
+  if (!last) return []
+  return points.filter((point) => point.t >= last.t - years * 365.25 * 864e5)
+}
+
 function errItem(key: IndicatorKey, e: unknown): Indicator {
   console.error(`[indicators] ${key} failed:`, e instanceof Error ? e.message : e)
   return {
@@ -147,6 +153,88 @@ async function getBuffett(): Promise<Indicator> {
     }
   } catch (e) {
     return errItem('buffett', e)
+  }
+}
+
+// ── Free macro extensions ──────────────────────────────────────────────
+// FRED는 이미 버핏 지수에 사용 중인 공식 데이터 경로라, 추가 지표도 같은 캐시·폴백 정책을 따른다.
+export function rollingPercentChange(points: Point[], periods: number): Point[] {
+  const out: Point[] = []
+  for (let i = periods; i < points.length; i++) {
+    const prev = points[i - periods].v
+    if (prev === 0) continue
+    out.push({ t: points[i].t, v: ((points[i].v / prev) - 1) * 100 })
+  }
+  return out
+}
+
+async function getHySpread(): Promise<Indicator> {
+  try {
+    const history = recentPoints(await fredSeries('BAMLH0A0HYM2'))
+    if (history.length === 0) throw new Error('hyspread: empty series')
+    const last = history[history.length - 1]
+    return {
+      key: 'hyspread',
+      value: round(last.v, 2),
+      asOf: dateLabel(last.t),
+      zone: classify('hyspread', last.v),
+      history: history.map((p) => ({ t: p.t, v: round(p.v, 2) })),
+    }
+  } catch (e) {
+    return errItem('hyspread', e)
+  }
+}
+
+async function getNfci(): Promise<Indicator> {
+  try {
+    const history = recentPoints(await fredSeries('NFCI'))
+    if (history.length === 0) throw new Error('nfci: empty series')
+    const last = history[history.length - 1]
+    return {
+      key: 'nfci',
+      value: round(last.v, 2),
+      asOf: dateLabel(last.t),
+      zone: classify('nfci', last.v),
+      history: history.map((p) => ({ t: p.t, v: round(p.v, 2) })),
+    }
+  } catch (e) {
+    return errItem('nfci', e)
+  }
+}
+
+async function getUsdKrw(): Promise<Indicator> {
+  try {
+    const history = recentPoints(rollingPercentChange(await fredSeries('DEXKOUS'), 20))
+    if (history.length === 0) throw new Error('usdwkrw: insufficient series')
+    const last = history[history.length - 1]
+    return {
+      key: 'usdwkrw',
+      value: round(last.v, 2),
+      asOf: dateLabel(last.t),
+      zone: classify('usdwkrw', last.v),
+      history: history.map((p) => ({ t: p.t, v: round(p.v, 2) })),
+      note: '20거래일 기준',
+    }
+  } catch (e) {
+    return errItem('usdwkrw', e)
+  }
+}
+
+async function getExports(): Promise<Indicator> {
+  try {
+    // OECD의 한국 상품 수출 전년동월비. ponytail: 관세청 잠정치보다 시차는 있으나 장기 월간 시계열이 안정적이다.
+    const history = recentPoints(await fredSeries('XTEXVA01KRM659S'), 10)
+    if (history.length === 0) throw new Error('exports: empty series')
+    const last = history[history.length - 1]
+    return {
+      key: 'exports',
+      value: round(last.v, 1),
+      asOf: monthLabel(last.t),
+      zone: classify('exports', last.v),
+      history: history.map((p) => ({ t: p.t, v: round(p.v, 1) })),
+    }
+  } catch (e) {
+    return errItem('exports', e)
   }
 }
 
@@ -422,9 +510,20 @@ async function getKospiFlow(): Promise<Indicator> {
   }
 }
 
-// 6개 지표를 병렬로 수집. 개별 실패는 errItem으로 격리되어 페이지 전체를 죽이지 않는다.
+// 10개 지표를 병렬로 수집. 개별 실패는 errItem으로 격리되어 페이지 전체를 죽이지 않는다.
 export async function getAllIndicators(): Promise<Indicator[]> {
-  const keys: IndicatorKey[] = ['buffett', 'cape', 'vix', 'feargreed', 'vkospi', 'kospiflow']
-  const settled = await Promise.allSettled([getBuffett(), getCape(), getVix(), getFearGreed(), getVkospi(), getKospiFlow()])
+  const keys: IndicatorKey[] = ['buffett', 'cape', 'vix', 'feargreed', 'vkospi', 'kospiflow', 'hyspread', 'nfci', 'usdwkrw', 'exports']
+  const settled = await Promise.allSettled([
+    getBuffett(),
+    getCape(),
+    getVix(),
+    getFearGreed(),
+    getVkospi(),
+    getKospiFlow(),
+    getHySpread(),
+    getNfci(),
+    getUsdKrw(),
+    getExports(),
+  ])
   return settled.map((s, i) => (s.status === 'fulfilled' ? s.value : errItem(keys[i], s.reason)))
 }

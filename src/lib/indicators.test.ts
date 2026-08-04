@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { parseFredCsv, parseFredJson, computeBuffettSeries, parseCapeCurrent, parseCapeTable, parseInvestorTable } from './indicators'
+import { parseFredCsv, parseFredJson, computeBuffettSeries, parseCapeCurrent, parseCapeTable, parseInvestorTable, rollingPercentChange } from './indicators'
 import { classify } from '../constants/zones'
 
 test('parseFredCsv: skips header + "." missing values', () => {
@@ -101,4 +101,24 @@ test('classify: zone boundaries per indicator', () => {
   assert.equal(classify('feargreed', 43)?.ko, '공포')
   assert.equal(classify('feargreed', 80)?.en, 'Extreme Greed')
   assert.equal(classify('vix', null), null)
+})
+
+test('rollingPercentChange: uses the requested trading-period offset', () => {
+  const points = [
+    { t: Date.parse('2026-01-01'), v: 100 },
+    { t: Date.parse('2026-01-02'), v: 110 },
+    { t: Date.parse('2026-01-03'), v: 121 },
+  ]
+  const change = rollingPercentChange(points, 2)
+  assert.equal(change.length, 1)
+  assert.equal(change[0].t, Date.parse('2026-01-03'))
+  assert.ok(Math.abs(change[0].v - 21) < 1e-9)
+})
+
+test('classify: new macro indicator bands', () => {
+  assert.equal(classify('hyspread', 2.5)?.ko, '매우 안정')
+  assert.equal(classify('hyspread', 8)?.en, 'Credit stress')
+  assert.equal(classify('nfci', -0.7)?.en, 'Loose')
+  assert.equal(classify('usdwkrw', 4)?.ko, '원화 약세')
+  assert.equal(classify('exports', -11)?.en, 'Sharp contraction')
 })
