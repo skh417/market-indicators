@@ -1,0 +1,32 @@
+/* 캘린더 탭과 동일한 필 스타일 — 수치는 CalendarEvents.module.css의 .tabs/.tab/.tabActive를 따름 */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.tab {
+  font: inherit;
+  cursor: pointer;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: var(--fw-medium);
+  color: var(--faint);
+  border: var(--border-width) solid var(--border);
+  background: transparent;
+}
+
+.tabActive {
+  color: var(--accent);
+  border-color: currentColor;
+  background: color-mix(in srgb, currentColor var(--badge-tint), transparent);
+}
+
+.panes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--stack-page);
+}

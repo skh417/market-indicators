@@ -1,4 +1,4 @@
-import type { IndicatorKey } from '../lib/types'
+import type { EventMarket, IndicatorKey } from '../lib/types'
 
 export type Label = {
   ko: string
@@ -8,6 +8,7 @@ export type Label = {
   unit: string
   decimals: number
   source: string
+  market: EventMarket // 홈 대시보드 미국/한국 탭 분류
 }
 
 export const LABELS: Record<IndicatorKey, Label> = {
@@ -19,6 +20,7 @@ export const LABELS: Record<IndicatorKey, Label> = {
     unit: '%',
     decimals: 1,
     source: 'FRED (NCBEILQ027S ÷ GDP)',
+    market: 'US',
   },
   cape: {
     ko: 'CAPE · 실러 PER',
@@ -28,6 +30,7 @@ export const LABELS: Record<IndicatorKey, Label> = {
     unit: '',
     decimals: 2,
     source: 'multpl.com',
+    market: 'US',
   },
   vix: {
     ko: '변동성 지수',
@@ -37,6 +40,7 @@ export const LABELS: Record<IndicatorKey, Label> = {
     unit: '',
     decimals: 2,
     source: 'Cboe · Yahoo Finance',
+    market: 'US',
   },
   vkospi: {
     ko: '코스피 변동성지수',
@@ -46,6 +50,7 @@ export const LABELS: Record<IndicatorKey, Label> = {
     unit: '',
     decimals: 2,
     source: 'KRX Open API',
+    market: 'KR',
   },
   kospiflow: {
     ko: '코스피 투자자별 수급',
@@ -55,6 +60,7 @@ export const LABELS: Record<IndicatorKey, Label> = {
     unit: '조원',
     decimals: 2,
     source: '네이버 금융',
+    market: 'KR',
   },
   feargreed: {
     ko: '공포·탐욕 지수',
@@ -64,42 +70,17 @@ export const LABELS: Record<IndicatorKey, Label> = {
     unit: '',
     decimals: 0,
     source: 'CNN Business',
-  },
-  hyspread: {
-    ko: '하이일드 신용스프레드',
-    en: 'US High Yield OAS',
-    blurbKo: '미국 하이일드 회사채와 국채의 금리 차이. 높을수록 신용 위험 회피가 큽니다.',
-    blurbEn: 'The yield gap between US high-yield corporates and Treasuries. Higher means greater credit risk aversion.',
-    unit: '%p',
-    decimals: 2,
-    source: 'FRED · ICE BofA',
-  },
-  nfci: {
-    ko: '미국 금융여건지수',
-    en: 'Chicago Fed NFCI',
-    blurbKo: '자금·신용·위험 시장을 종합한 금융여건 지수. 양수일수록 평균보다 긴축적입니다.',
-    blurbEn: 'A composite of US money, debt, equity, and banking conditions. Positive values mean tighter-than-average conditions.',
-    unit: '',
-    decimals: 2,
-    source: 'FRED · Chicago Fed',
+    market: 'US',
   },
   usdwkrw: {
-    ko: '원/달러 1개월 변동률',
-    en: 'USD/KRW 1M Change',
-    blurbKo: '최근 20거래일 원/달러 환율 변화율. 양수는 원화 약세, 음수는 원화 강세를 뜻합니다.',
-    blurbEn: 'USD/KRW change over the latest 20 trading days. Positive means a weaker Korean won.',
-    unit: '%',
-    decimals: 2,
-    source: 'FRED · Federal Reserve',
-  },
-  exports: {
-    ko: '한국 수출 증가율',
-    en: 'Korea Export Growth',
-    blurbKo: '전년 동월 대비 한국 상품 수출 증가율. 수출·반도체 경기의 거시 흐름을 보여 줍니다.',
-    blurbEn: 'Year-over-year growth in Korean goods exports, a macro read on the export and semiconductor cycle.',
-    unit: '%',
+    ko: '원/달러 환율',
+    en: 'USD/KRW',
+    blurbKo: '미 달러 대비 원화 환율. 오르면 원화 약세, 내리면 원화 강세를 뜻합니다.',
+    blurbEn: 'The Korean won per US dollar. Rising means a weaker won.',
+    unit: '원',
     decimals: 1,
-    source: 'FRED · OECD',
+    source: 'FRED · Federal Reserve',
+    market: 'KR',
   },
 }
 

@@ -1,8 +1,9 @@
 import { getAllIndicators } from '@/lib/indicators'
 import { getMarketEvents } from '@/lib/calendar'
-import { SITE } from '@/constants/labels'
+import { LABELS, SITE } from '@/constants/labels'
 import BuffettHero from '@/components/BuffettHero'
 import IndicatorCard from '@/components/IndicatorCard'
+import MarketTabs from '@/components/MarketTabs'
 import ReportSection from '@/components/ReportSection'
 import UpcomingEvents from '@/components/UpcomingEvents'
 import Link from 'next/link'
@@ -15,6 +16,8 @@ export default async function Home() {
   const [indicators, events] = await Promise.all([getAllIndicators(), getMarketEvents()])
   const buffett = indicators.find((i) => i.key === 'buffett')
   const rest = indicators.filter((i) => i.key !== 'buffett')
+  const usCards = rest.filter((i) => LABELS[i.key].market === 'US')
+  const krCards = rest.filter((i) => LABELS[i.key].market === 'KR')
 
   return (
     <main className={styles.main}>
@@ -29,13 +32,25 @@ export default async function Home() {
         <p className={styles.sub}>{SITE.descKo}</p>
       </header>
 
-      {buffett && <BuffettHero indicator={buffett} />}
-
-      <div className={styles.stack}>
-        {rest.map((ind) => (
-          <IndicatorCard key={ind.key} indicator={ind} />
-        ))}
-      </div>
+      <MarketTabs
+        us={
+          <>
+            {buffett && <BuffettHero indicator={buffett} />}
+            <div className={styles.stack}>
+              {usCards.map((ind) => (
+                <IndicatorCard key={ind.key} indicator={ind} />
+              ))}
+            </div>
+          </>
+        }
+        kr={
+          <div className={styles.stack}>
+            {krCards.map((ind) => (
+              <IndicatorCard key={ind.key} indicator={ind} />
+            ))}
+          </div>
+        }
+      />
 
       <UpcomingEvents events={events} />
       <ReportSection />

@@ -5,10 +5,7 @@ export type IndicatorKey =
   | 'feargreed'
   | 'vkospi'
   | 'kospiflow'
-  | 'hyspread'
-  | 'nfci'
   | 'usdwkrw'
-  | 'exports'
 
 // t: unix milliseconds, v: value
 export type Point = { t: number; v: number }
