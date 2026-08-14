@@ -7,7 +7,6 @@ const C = {
   yellow: '#eab308',
   orange: '#f97316',
   red: '#ef4444',
-  gray: '#94a3b8',
 } as const
 
 type Band = { max: number; zone: Zone }
@@ -62,9 +61,9 @@ const BANDS: Record<IndicatorKey, Band[]> = {
     { max: 75, zone: { ko: '탐욕', en: 'Greed', color: C.teal } },
     { max: Infinity, zone: { ko: '극심한 탐욕', en: 'Extreme Greed', color: C.green } },
   ],
-  // 환율은 좋고 나쁨의 구간 판정 없이 수준만 보여주는 참고 지표
+  // 환율은 좋고 나쁨의 구간 판정 없이 수준만 보여주는 참고 지표 — 중립 판정 색(blue)으로 표시
   usdwkrw: [
-    { max: Infinity, zone: { ko: '참고 지표', en: 'Reference', color: C.gray } },
+    { max: Infinity, zone: { ko: '참고 지표', en: 'Reference', color: C.blue } },
   ],
 }
 
