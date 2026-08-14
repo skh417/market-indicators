@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { bokRateDecisionEvents, normalizeEvents, parseAlphaEarningsCalendar, parseBlsCalendar, parseDartList, parseFomcCalendar } from './calendar'
+import { bokRateDecisionEvents, normalizeEvents, parseAlphaEarningsCalendar, parseDartList, parseFomcCalendar, parseFredReleaseDates } from './calendar'
 import { CALENDAR_COMPANIES } from '@/constants/companies'
 import type { MarketEvent } from './types'
 
@@ -17,23 +17,16 @@ test('parseAlphaEarningsCalendar: keeps only the tracked companies', () => {
   assert.equal(events[0].previous, '예상 EPS 1.25')
 })
 
-test('parseBlsCalendar: keeps high-impact release types', () => {
-  const ics = [
-    'BEGIN:VCALENDAR',
-    'BEGIN:VEVENT',
-    'DTSTART:20260812T083000',
-    'SUMMARY:Consumer Price Index',
-    'END:VEVENT',
-    'BEGIN:VEVENT',
-    'DTSTART:20260820T100000',
-    'SUMMARY:Productivity and Costs',
-    'END:VEVENT',
-    'END:VCALENDAR',
-  ].join('\n')
-  const events = parseBlsCalendar(ics)
+test('parseFredReleaseDates: maps release dates to confirmed macro events', () => {
+  const events = parseFredReleaseDates(
+    { release_dates: [{ date: '2026-09-11' }, { date: undefined }] },
+    { id: 10, title: '미국 소비자물가(CPI)' },
+  )
   assert.equal(events.length, 1)
+  assert.equal(events[0].scheduledAt.slice(0, 10), '2026-09-11')
   assert.equal(events[0].title, '미국 소비자물가(CPI)')
   assert.equal(events[0].status, 'confirmed')
+  assert.ok(events[0].sourceUrl.includes('rid=10'))
 })
 
 test('parseFomcCalendar: reads month/date div pairs and skips minutes-release dates', () => {

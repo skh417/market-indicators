@@ -75,27 +75,48 @@ export function parseAlphaEarningsCalendar(csv: string): MarketEvent[] {
   return out
 }
 
-export function parseBlsCalendar(ics: string): MarketEvent[] {
-  const unfolded = ics.replace(/\r?\n[ \t]/g, '')
-  const events = unfolded.split('BEGIN:VEVENT').slice(1)
-  const targets = [/consumer price index/i, /employment situation/i, /producer price index/i]
-  return events.flatMap((block) => {
-    const summary = block.match(/\nSUMMARY:(.+)/)?.[1]?.trim()
-    const date = block.match(/\nDTSTART[^:]*:(\d{8})/)?.[1]
-    const scheduledAt = date ? isoDate(date) : null
-    if (!summary || !scheduledAt || !targets.some((target) => target.test(summary))) return []
-    const title = /consumer price/i.test(summary) ? '미국 소비자물가(CPI)' : /employment/i.test(summary) ? '미국 고용보고서' : '미국 생산자물가(PPI)'
+// bls.gov는 데이터센터 IP를 403으로 차단해서(2026-08 확인) 이미 프로덕션에서 검증된
+// FRED 인증 API의 릴리스 일정으로 같은 발표 날짜를 가져온다.
+const FRED_RELEASES = [
+  { id: 10, title: '미국 소비자물가(CPI)' },
+  { id: 46, title: '미국 생산자물가(PPI)' },
+  { id: 50, title: '미국 고용보고서' },
+] as const
+
+export function parseFredReleaseDates(json: { release_dates?: Array<{ date?: string }> }, release: { id: number; title: string }): MarketEvent[] {
+  return (json.release_dates ?? []).flatMap((item) => {
+    const scheduledAt = item.date ? isoDate(item.date.replaceAll('-', '')) : null
+    if (!scheduledAt) return []
     return [{
-      id: `bls:${date}:${title}`,
+      id: `bls:${item.date}:${release.title}`,
       kind: 'macro' as EventKind,
       market: 'US' as EventMarket,
       scheduledAt,
-      title,
+      title: release.title,
       status: 'confirmed' as EventStatus,
-      source: 'U.S. Bureau of Labor Statistics',
-      sourceUrl: 'https://www.bls.gov/schedule/news_release/bls.ics',
+      source: 'U.S. Bureau of Labor Statistics · FRED',
+      sourceUrl: `https://fred.stlouisfed.org/release?rid=${release.id}`,
     }]
   })
+}
+
+async function fetchFredReleaseSchedule(): Promise<MarketEvent[]> {
+  const key = process.env.FRED_API_KEY
+  if (!key) return []
+  const start = new Date(Date.now() - 14 * DAY).toISOString().slice(0, 10)
+  const results = await Promise.allSettled(FRED_RELEASES.map(async (release) => {
+    const url = new URL('https://api.stlouisfed.org/fred/release/dates')
+    url.searchParams.set('release_id', String(release.id))
+    url.searchParams.set('realtime_start', start)
+    url.searchParams.set('realtime_end', '9999-12-31')
+    url.searchParams.set('include_release_dates_with_no_data', 'true')
+    url.searchParams.set('file_type', 'json')
+    url.searchParams.set('api_key', key)
+    const res = await fetch(url, { next: { revalidate: DAY } })
+    if (!res.ok) throw new Error(`FRED HTTP ${res.status}`)
+    return parseFredReleaseDates((await res.json()) as { release_dates?: Array<{ date?: string }> }, release)
+  }))
+  return results.flatMap((result, i) => fulfilled(`FRED ${FRED_RELEASES[i].title}`, result))
 }
 
 const FOMC_MONTHS: Record<string, number> = { January: 0, February: 1, March: 2, April: 3, May: 4, June: 5, July: 6, August: 7, September: 8, October: 9, November: 10, December: 11 }
@@ -213,16 +234,13 @@ async function fetchAlphaEarnings(): Promise<MarketEvent[]> {
 async function fetchUsMacroEvents(): Promise<MarketEvent[]> {
   const year = new Date().getUTCFullYear()
   const [bls, fomc] = await Promise.allSettled([
-    fetch('https://www.bls.gov/schedule/news_release/bls.ics', { headers: BROWSER_HEADERS, next: { revalidate: DAY } }).then(async (res) => {
-      if (!res.ok) throw new Error(`BLS HTTP ${res.status}`)
-      return parseBlsCalendar(await res.text())
-    }),
+    fetchFredReleaseSchedule(),
     fetch('https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm', { headers: BROWSER_HEADERS, next: { revalidate: DAY } }).then(async (res) => {
       if (!res.ok) throw new Error(`Fed HTTP ${res.status}`)
       return parseFomcCalendar(await res.text(), year)
     }),
   ])
-  return [...fulfilled('BLS', bls), ...fulfilled('FOMC', fomc)]
+  return [...fulfilled('BLS 일정(FRED)', bls), ...fulfilled('FOMC', fomc)]
 }
 
 const STATUS_WEIGHT: Record<EventStatus, number> = { released: 3, confirmed: 2, estimated: 1 }
