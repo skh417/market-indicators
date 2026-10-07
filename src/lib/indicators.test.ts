@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { parseFredCsv, parseFredJson, computeBuffettSeries, parseCapeCurrent, parseCapeTable, parseInvestorTable } from './indicators'
+import { parseFredCsv, parseFredJson, computeBuffettSeries, parseCapeCurrent, parseCapeTable, parseInvestorTrend } from './indicators'
 import { classify } from '../constants/zones'
 
 test('parseFredCsv: skips header + "." missing values', () => {
@@ -65,24 +65,52 @@ test('parseCapeTable: parses rows, skips &#x2002; entity, sorts ascending', () =
   assert.ok(pts.every((p) => p.v < 100))
 })
 
-test('parseInvestorTable: parses date2 rows, first 3 numeric cells only, sorts ascending', () => {
-  const html =
-    '<tr>\n<td class="date2">26.07.31</td>\n<td class="rate_down3">-82,740</td>\n' +
-    '<td class="rate_up3">72,414</td>\n<td class="rate_up3">11,397</td>\n' +
-    '<td class="rate_down3">-6,447</td>\n<td class="rate_up3">342</td>\n</tr>\n' +
-    '<tr><td class="blank_07"></td><td class="division_line" colspan="10"></td></tr>\n' +
-    '<tr>\n<td class="date2">26.07.30</td>\n<td class="rate_down3">-14,309</td>\n' +
-    '<td class="rate_up3">13,280</td>\n<td class="rate_up3">805</td>\n</tr>'
-  const rows = parseInvestorTable(html)
-  assert.equal(rows.length, 2)
-  // 오름차순: 07.30이 먼저
-  assert.equal(rows[0].t, Date.parse('2026-07-30'))
-  assert.deepEqual(rows[1], {
-    t: Date.parse('2026-07-31'),
-    personal: -82740,
-    foreign: 72414,
-    institution: 11397,
+test('parseInvestorTrend: investorGubun 매핑, 원→억원, 최신일 우선 → 오름차순, 7100·9999 제외', () => {
+  const amt = (investorGubun: string, diffValue: string) => ({ investorGubun, diffValue })
+  const json = JSON.stringify({
+    content: [
+      {
+        // 시드 2026-07-30 값(개인 -14309, 외국인 13280, 기관 805 억원)으로 합산되게 구성
+        bizdate: '20260730',
+        netAmounts: [
+          amt('8000', '-1430900000000'),
+          amt('9000', '1300000000000'),
+          amt('9001', '28000000000'),
+          amt('1000', '50000000000'),
+          amt('2000', '10000000000'),
+          amt('3000', '10000000000'),
+          amt('3100', '5000000000'),
+          amt('4000', '2000000000'),
+          amt('5000', '1000000000'),
+          amt('6000', '2000000000'),
+          amt('7000', '500000000'),
+          amt('7100', '99900000000000'), // 기타법인 — 무시
+          amt('9999', '1'), // 기관계 — 무시
+        ],
+      },
+      { bizdate: '20260729', netAmounts: [amt('8000', '-1970100000000'), amt('9000', '-1250200000000'), amt('6000', '3176900000000')] },
+    ],
+    totalElements: '5368',
   })
+  const rows = parseInvestorTrend(json)
+  assert.equal(rows.length, 2)
+  // 오름차순: 07-29가 먼저
+  assert.deepEqual(rows[0], { t: Date.parse('2026-07-29'), personal: -19701, foreign: -12502, institution: 31769 })
+  assert.deepEqual(rows[1], { t: Date.parse('2026-07-30'), personal: -14309, foreign: 13280, institution: 805 })
+})
+
+test('parseInvestorTrend: 비정상 행 스킵, 억원 정수 반올림', () => {
+  const json = JSON.stringify({
+    content: [
+      { bizdate: '20260101', netAmounts: [{ investorGubun: '8000', diffValue: '149999999' }] }, // 1.4999억 → 1
+      { bizdate: '20260102' }, // netAmounts 없음
+      { bizdate: '20260103', netAmounts: [] },
+      { bizdate: '20260105', netAmounts: [{ investorGubun: '9000', diffValue: 'abc' }] }, // NaN
+      { bizdate: 'bad', netAmounts: [{ investorGubun: '8000', diffValue: '1' }] },
+    ],
+  })
+  assert.deepEqual(parseInvestorTrend(json), [{ t: Date.parse('2026-01-01'), personal: 1, foreign: 0, institution: 0 }])
+  assert.deepEqual(parseInvestorTrend('{}'), [])
 })
 
 test('classify: kospiflow bands (조원 단위)', () => {

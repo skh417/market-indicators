@@ -19,7 +19,7 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return Promise.race([p.finally(() => clearTimeout(timer)), timeout])
 }
 
-type FetchOpts = { ua?: string; accept?: string; referer?: string; authKey?: string; encoding?: string; revalidate: number }
+type FetchOpts = { ua?: string; accept?: string; referer?: string; authKey?: string; revalidate: number }
 
 async function httpText(url: string, opts: FetchOpts): Promise<string> {
   const headers: Record<string, string> = {}
@@ -32,8 +32,6 @@ async function httpText(url: string, opts: FetchOpts): Promise<string> {
     12_000,
   )
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`)
-  // EUC-KR 등 비UTF-8 응답은 바이트로 받아 직접 디코드
-  if (opts.encoding) return new TextDecoder(opts.encoding).decode(await withTimeout(res.arrayBuffer(), 12_000))
   return withTimeout(res.text(), 12_000)
 }
 
@@ -365,57 +363,69 @@ async function getVkospi(): Promise<Indicator> {
       asOf: dateLabel(last.t),
       zone: classify('vkospi', last.v),
       history,
+      // ponytail: 10일 전부 null이면 휴장이 아니라 조회 실패로 간주(국내 최장 연휴 ≈ 7일)
+      ...(recent.every((p) => p === null) ? { note: '최신 조회 실패 · Live fetch failed' } : {}),
     }
   } catch (e) {
     return errItem('vkospi', e)
   }
 }
 
-// ── 코스피 투자자별 수급 (네이버 금융) ─────────────────────────────────
-// finance.naver.com 일별 투자자별 매매동향 iframe(EUC-KR HTML, 10거래일/페이지).
-// 행: <td class="date2">YY.MM.DD</td> 뒤로 개인·외국인·기관계 순의 숫자 셀(억원).
+// ── 코스피 투자자별 수급 (네이버 증권 API) ─────────────────────────────
+// stock.naver.com/api/domestic/market/trend/daily — content[]는 최신일 우선, 숫자는 문자열, diffValue는 원(KRW).
+// investorGubun: 8000 개인 / 9000 외국인 + 9001 기타외국인 / 기관계 = 1000 금융투자 + 2000 보험 + 3000 투신
+// + 3100 사모 + 4000 은행 + 5000 기타금융 + 6000 연기금등 + 7000(연기금 병합분). 7100 기타법인·9999 기관계는 제외.
+// 원 단위로 합산한 뒤 ÷1e8 → 억원 정수 (구 페이지·시드와 동일 단위, 2026-07-29/30 시드와 정확 일치 확인).
 export type FlowRow = { t: number; personal: number; foreign: number; institution: number }
+type TrendRow = { bizdate?: string; netAmounts?: { investorGubun?: string; diffValue?: string }[] }
+const INSTITUTION = new Set(['1000', '2000', '3000', '3100', '4000', '5000', '6000', '7000'])
 
-export function parseInvestorTable(html: string): FlowRow[] {
-  const N = '<td[^>]*>\\s*(-?[\\d,]+)\\s*<\\/td>'
-  const re = new RegExp(`<td class="date2">(\\d{2})\\.(\\d{2})\\.(\\d{2})<\\/td>\\s*${N}\\s*${N}\\s*${N}`, 'g')
-  const num = (s: string) => parseInt(s.replace(/,/g, ''), 10)
+export function parseInvestorTrend(text: string): FlowRow[] {
+  const content = (JSON.parse(text) as { content?: TrendRow[] }).content ?? []
   const out: FlowRow[] = []
-  let m: RegExpExecArray | null
-  while ((m = re.exec(html))) {
-    const t = Date.parse(`20${m[1]}-${m[2]}-${m[3]}`)
-    const [personal, foreign, institution] = [num(m[4]), num(m[5]), num(m[6])]
-    if (!Number.isNaN(t) && [personal, foreign, institution].every(Number.isFinite))
-      out.push({ t, personal, foreign, institution })
+  for (const row of content) {
+    const b = row.bizdate ?? ''
+    const t = Date.parse(`${b.slice(0, 4)}-${b.slice(4, 6)}-${b.slice(6, 8)}`)
+    if (Number.isNaN(t) || !row.netAmounts?.length) continue
+    let personal = 0
+    let foreign = 0
+    let institution = 0
+    for (const n of row.netAmounts) {
+      const v = parseFloat(String(n.diffValue)) // 비정상 값은 NaN → 아래 every()로 행 제외
+      if (n.investorGubun === '8000') personal += v
+      else if (n.investorGubun === '9000' || n.investorGubun === '9001') foreign += v
+      else if (INSTITUTION.has(n.investorGubun ?? '')) institution += v
+    }
+    const eok = (v: number) => Math.round(v / 1e8)
+    if ([personal, foreign, institution].every(Number.isFinite))
+      out.push({ t, personal: eok(personal), foreign: eok(foreign), institution: eok(institution) })
   }
   return out.sort((a, b) => a.t - b.t)
 }
 
 async function getKospiFlow(): Promise<Indicator> {
   try {
-    // 과거분은 시드(scripts/backfill-kospiflow.mjs 생성)에서 읽고 최근 2페이지(~20거래일)만 API로 병합.
-    // 원천(시드·네이버)은 억원 단위 — 표시는 조원이라 마지막에 ÷10,000.
-    // ponytail: 시드 종료 후 20거래일 넘게 지나면 공백 — 백필 재실행으로 해결.
+    // 과거분은 시드(scripts/backfill-kospiflow.mjs 생성), 최근 200거래일(~10개월)은 API 1회 호출로 병합.
+    // 원천(시드·API)은 억원 단위 — 표시는 조원이라 마지막에 ÷10,000.
+    // ponytail: 조회 실패·빈 응답만 note로 알린다. API가 살아 있는데 갱신이 멈추는 경우는
+    //   report.ts의 경과일처럼 `Date.now() - last.t` 체크를 추가해 잡을 것.
     const byT = new Map<number, FlowRow>(kospiflowSeed.map((r) => [r.t, r]))
     let latest: FlowRow | null = null
-    // 서버는 UTC — KST(+9h)로 보정한 오늘 날짜에서 시작해 과거로 페이지네이션
-    let biz = new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10).replace(/-/g, '')
+    let note: string | undefined
     try {
-      for (let i = 0; i < 2; i++) {
-        const html = await httpText(
-          `https://finance.naver.com/sise/investorDealTrendDay.naver?bizdate=${biz}&sosok=01`,
-          { ua: BROWSER_UA, referer: 'https://finance.naver.com/sise/', encoding: 'euc-kr', revalidate: HOUR },
-        )
-        const page = parseInvestorTable(html)
-        if (page.length === 0) break
-        for (const r of page) byT.set(r.t, r)
-        const pageLast = page[page.length - 1]
-        if (!latest || pageLast.t > latest.t) latest = pageLast
-        biz = new Date(page[0].t - DAY * 1000).toISOString().slice(0, 10).replace(/-/g, '') // 최고(最古)일 하루 전
-      }
+      const live = parseInvestorTrend(
+        await httpText(
+          'https://stock.naver.com/api/domestic/market/trend/daily?tradeType=KRX&marketType=KOSPI&startIdx=0&pageSize=200',
+          { ua: BROWSER_UA, accept: 'application/json', referer: 'https://stock.naver.com/market/stock/kr/trend/trader', revalidate: HOUR },
+        ),
+      )
+      if (live.length === 0) throw new Error('kospiflow: live rows empty') // HTTP 200이지만 빈 응답
+      for (const r of live) byT.set(r.t, r)
+      latest = live[live.length - 1]
     } catch (e) {
-      // 실시간 조회 실패해도 시드만으로 렌더 (개인/기관 note만 생략됨)
+      // 실시간 조회 실패해도 시드만으로 렌더 — 단, 카드에 실패를 표시해 조용히 멈추지 않게 한다
       console.error('[indicators] kospiflow live fetch failed:', e instanceof Error ? e.message : e)
+      note = '최신 조회 실패 · Live fetch failed'
     }
     const rows = [...byT.values()].sort((a, b) => a.t - b.t)
     const last = rows[rows.length - 1]
@@ -437,9 +447,7 @@ async function getKospiFlow(): Promise<Indicator> {
         { name: '개인', points: pick((r) => r.personal) },
       ],
       // 개인/기관 값은 실시간 조회의 최신일이 화면의 최신일과 일치할 때만 표기
-      ...(latest && latest.t === last.t
-        ? { note: `개인 ${fmt(latest.personal)}조 · 기관 ${fmt(latest.institution)}조` }
-        : {}),
+      note: latest && latest.t === last.t ? `개인 ${fmt(latest.personal)}조 · 기관 ${fmt(latest.institution)}조` : note,
     }
   } catch (e) {
     return errItem('kospiflow', e)
